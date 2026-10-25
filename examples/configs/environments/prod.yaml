@@ -1,0 +1,22 @@
+exporters:
+  otlp/production:
+    endpoint: otel-gateway.prod.internal:4317
+    tls:
+      insecure: false
+
+processors:
+  batch:
+    timeout: 2s
+    send_batch_size: 8192
+
+service:
+  pipelines:
+    traces:
+      exporters: [otlp/production]
+    metrics:
+      exporters: [otlp/production]
+    logs:
+      exporters: [otlp/production]
+  telemetry:
+    logs:
+      level: warn

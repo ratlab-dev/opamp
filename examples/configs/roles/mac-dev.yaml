@@ -1,0 +1,32 @@
+receivers:
+  filelog/dev:
+    include:
+      - /var/log/system.log
+      - /var/log/install.log
+      - /var/log/wifi.log
+      - /var/log/fsck_apfs.log
+      - /var/log/fsck_hfs.log
+      - /Library/Logs/DiagnosticReports/*.diag
+      - /Library/Logs/DiagnosticReports/*.ips
+    start_at: end
+    include_file_name: true
+    include_file_path: true
+
+exporters:
+  otlp_http/openobserve:
+    endpoint: http://localhost:5080/api/default
+    headers:
+      Authorization: "${env:OPENOBSERVE_AUTH}"
+      stream-name: "default"
+    tls:
+      insecure: true
+  debug/stdout:
+    verbosity: detailed
+  
+
+service:
+  pipelines:
+    logs:
+      receivers: [filelog/dev]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_http/openobserve, debug/stdout]

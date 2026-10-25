@@ -1,0 +1,2883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpAMP Server - Fleet & Configuration Manager</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --purple: #8b5cf6;
+      --code-bg: #090d16;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 18px; line-height: 1; vertical-align: middle;
+    }
+    .icon-sm { font-size: 16px; }
+    .icon-md { font-size: 20px; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .logo-area { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 36px; height: 36px; background: linear-gradient(135deg, #38bdf8, #818cf8);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 18px; color: #000;
+    }
+    .title { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+    .subtitle { font-size: 13px; color: var(--text-muted); }
+    .badges { display: flex; gap: 8px; align-items: center; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600;
+    }
+    .badge-dev { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-prod { background: rgba(139, 92, 246, 0.2); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4); }
+    .badge-sync { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-apply { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .badge-fail { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .badge-live { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+    .pulse-dot {
+      width: 8px; height: 8px; background: #10b981; border-radius: 50%;
+      display: inline-block; animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .nav-tabs {
+      display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--card-border);
+      padding-bottom: 12px;
+    }
+    .tab-btn {
+      background: none; border: none; color: var(--text-muted); font-size: 14px; font-weight: 600;
+      padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+    }
+    .tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: var(--text); }
+    .tab-btn.active { background: var(--accent); color: #0f172a; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .card {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 12px; padding: 20px; margin-bottom: 20px;
+    }
+    .card-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+    .stat-box {
+      background: rgba(15, 23, 42, 0.6); border: 1px solid var(--card-border);
+      border-radius: 8px; padding: 14px;
+    }
+    .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; }
+    .stat-value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+    th { padding: 10px 14px; background: rgba(0, 0, 0, 0.2); color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--card-border); }
+    td { padding: 12px 14px; border-bottom: 1px solid var(--card-border); }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    /* Forms */
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text-muted); }
+    input, select, textarea {
+      width: 100%; background: var(--code-bg); border: 1px solid var(--card-border);
+      color: var(--text); border-radius: 6px; padding: 8px 12px; font-size: 13px;
+      outline: none; font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    textarea { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; line-height: 1.4; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; transition: background 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: #0f172a; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.3); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.1); color: var(--text); }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.15); }
+    .btn-sm { padding: 4px 8px; font-size: 12px; }
+
+    /* Code View */
+    .code-view {
+      background: var(--code-bg); border: 1px solid var(--card-border);
+      border-radius: 8px; padding: 16px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px; white-space: pre; overflow-x: auto; max-height: 550px;
+    }
+
+    /* Target Autocomplete & Suggestions */
+    .target-scope-filters { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+    .filter-btn {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--card-border);
+      border-radius: 4px; padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--text-muted);
+    }
+    .filter-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    .filter-btn.active { background: rgba(56,189,248,0.2); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .autocomplete-wrap { position: relative; }
+    .suggestions-box {
+      position: absolute; top: 100%; left: 0; right: 0; background: #0b1120;
+      border: 1px solid var(--accent); border-radius: 8px; max-height: 250px;
+      overflow-y: auto; z-index: 100; display: none; margin-top: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+    }
+    .suggestions-box.open { display: block; }
+    .suggestion-item {
+      padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.05);
+      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+      transition: background 0.15s;
+    }
+    .suggestion-item:hover { background: rgba(56,189,248,0.12); }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-title { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+    .suggestion-badge {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px;
+    }
+    .badge-scope-role { background: rgba(139, 92, 246, 0.25); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4); }
+    .badge-scope-environment { background: rgba(16, 185, 129, 0.25); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-scope-host { background: rgba(56, 189, 248, 0.25); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .badge-scope-cluster { background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+    /* Impact Assessment Panel */
+    .impact-panel {
+      background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 8px; padding: 14px; margin-top: 10px; margin-bottom: 14px;
+    }
+    .impact-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .impact-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+    .impact-metric-box { background: rgba(0,0,0,0.3); border-radius: 6px; padding: 8px 10px; }
+    .impact-metric-val { font-size: 16px; font-weight: 700; }
+    .impact-metric-lbl { font-size: 11px; color: var(--text-muted); }
+    .impact-host-tags { display: flex; gap: 6px; flex-wrap: wrap; max-height: 90px; overflow-y: auto; }
+    .host-tag {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
+      border-radius: 4px; padding: 2px 8px; font-size: 11px; font-family: monospace;
+    }
+
+    /* Priority Order Ladder */
+    .priority-ladder {
+      display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;
+    }
+    .priority-step {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border-radius: 6px; background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border); font-size: 12px;
+    }
+    .priority-step.highest {
+      background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #fbbf24;
+    }
+    .priority-step.active {
+      border-color: rgba(56, 189, 248, 0.6); background: rgba(56, 189, 248, 0.08);
+    }
+    .priority-arrow { color: var(--text-muted); font-size: 11px; text-align: center; margin: -2px 0; }
+
+    /* Provenance Timeline */
+    .provenance-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .provenance-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-radius: 8px; background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--card-border);
+    }
+    .provenance-item.active { border-color: rgba(56, 189, 248, 0.5); background: rgba(56, 189, 248, 0.05); }
+    .provenance-level {
+      width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-size: 11px; font-weight: bold; background: var(--card-border);
+    }
+    .provenance-item.active .provenance-level { background: var(--accent); color: #0f172a; }
+    .provenance-info { display: flex; align-items: center; gap: 12px; }
+    .provenance-name { font-weight: 600; font-size: 13px; }
+    .provenance-source { font-size: 12px; color: var(--text-muted); font-family: monospace; }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 12px; width: 90%; max-width: 1000px; max-height: 90vh;
+      display: flex; flex-direction: column; padding: 24px; overflow: hidden;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .modal-body { overflow-y: auto; flex: 1; }
+
+    /* Git guide card */
+    .git-guide-item {
+      padding: 14px; border-radius: 8px; background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border); margin-bottom: 12px;
+    }
+    .git-guide-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .git-guide-scope { font-weight: 600; font-size: 14px; color: var(--accent); }
+    .git-guide-path { font-family: monospace; font-size: 12px; color: #cbd5e1; }
+    .git-guide-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+
+    .alert {
+      padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .alert-info { background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #7dd3fc; }
+    .alert-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #fcd34d; }
+
+    /* Code View & Syntax Highlighting */
+    .code-view {
+      background: var(--code-bg); border: 1px solid var(--card-border);
+      border-radius: 8px; padding: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px; line-height: 1.5; white-space: pre; overflow-x: auto; max-height: 550px;
+      color: #cbd5e1;
+    }
+    .yaml-key { color: #38bdf8; font-weight: 600; }
+    .yaml-str { color: #a5d6a7; }
+    .yaml-num { color: #f59e0b; }
+    .yaml-bool { color: #c084fc; font-weight: 600; }
+    .yaml-null { color: #94a3b8; font-style: italic; }
+    .yaml-comment { color: #64748b; font-style: italic; }
+    .yaml-punct { color: #94a3b8; }
+
+    /* Diff View Styling */
+    .diff-container {
+      background: #080d1a; border: 1px solid var(--card-border); border-radius: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px; line-height: 20px; overflow: auto; max-height: 440px;
+    }
+    .diff-line {
+      display: flex; white-space: pre-wrap; word-break: break-all; min-height: 20px;
+    }
+    .diff-line.added {
+      background: rgba(16, 185, 129, 0.16); color: #6ee7b7;
+    }
+    .diff-line.removed {
+      background: rgba(239, 68, 68, 0.16); color: #fca5a5;
+    }
+    .diff-line.context {
+      color: #94a3b8;
+    }
+    .diff-line.hunk-header {
+      background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 600;
+      padding-top: 4px; padding-bottom: 4px; border-top: 1px solid rgba(56, 189, 248, 0.2);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+    }
+    .diff-num {
+      width: 44px; min-width: 44px; text-align: right; padding-right: 8px;
+      color: #475569; user-select: none; border-right: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(0,0,0,0.25);
+    }
+    .diff-sign {
+      width: 24px; min-width: 24px; text-align: center; user-select: none; font-weight: 700; flex-shrink: 0;
+    }
+    .diff-content {
+      flex: 1; padding-left: 8px; padding-right: 8px;
+    }
+
+    /* GitLab-style Side-by-Side Unified Table Diff */
+    .diff-side-table {
+      width: 100%; border-collapse: collapse; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px; line-height: 20px; table-layout: fixed;
+    }
+    .diff-side-table td {
+      padding: 0; vertical-align: top; border: none;
+    }
+    .side-half {
+      width: 50%; border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .side-half:last-child {
+      border-right: none;
+    }
+    .side-row-cell {
+      display: flex; min-height: 20px; width: 100%;
+    }
+    .side-row-cell.added {
+      background: rgba(16, 185, 129, 0.16); color: #6ee7b7;
+    }
+    .side-row-cell.removed {
+      background: rgba(239, 68, 68, 0.16); color: #fca5a5;
+    }
+    .side-row-cell.empty {
+      background: rgba(15, 23, 42, 0.4); color: transparent; user-select: none;
+    }
+    .side-row-cell.context {
+      color: #cbd5e1;
+    }
+    .side-num {
+      width: 42px; min-width: 42px; text-align: right; padding-right: 8px;
+      color: #475569; user-select: none; background: rgba(0,0,0,0.3);
+      border-right: 1px solid rgba(255, 255, 255, 0.06); flex-shrink: 0;
+    }
+    .side-sign {
+      width: 20px; min-width: 20px; text-align: center; user-select: none; font-weight: 700; flex-shrink: 0;
+    }
+    .side-code {
+      flex: 1; padding: 0 8px; white-space: pre-wrap; word-break: break-all;
+    }
+    .diff-side-header-wrap {
+      display: flex; background: #0c1322; border-bottom: 1px solid var(--card-border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .diff-side-header-col {
+      flex: 1; padding: 6px 14px; font-size: 11px; font-weight: 600;
+      color: var(--text-muted); border-right: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .diff-side-header-col:last-child {
+      border-right: none; color: var(--accent);
+    }
+
+    /* Diff View Mode Switcher */
+    .diff-mode-switcher {
+      display: inline-flex; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--card-border);
+      border-radius: 6px; padding: 2px; gap: 2px;
+    }
+    .diff-mode-btn {
+      background: transparent; border: none; color: var(--text-muted); font-size: 12px;
+      padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.15s;
+    }
+    .diff-mode-btn:hover { color: var(--text); }
+    .diff-mode-btn.active { background: var(--accent); color: #0f172a; font-weight: 600; }
+
+    /* Toast Notification (No browser alert) */
+    .toast-container {
+      position: fixed; bottom: 24px; right: 24px; z-index: 2000;
+      display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto; padding: 12px 18px; border-radius: 8px; font-size: 13px;
+      font-weight: 500; display: flex; align-items: center; gap: 10px; min-width: 280px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5); animation: toastIn 0.25s ease-out;
+    }
+    .toast.success { background: #064e3b; color: #6ee7b7; border: 1px solid #059669; }
+    .toast.error { background: #7f1d1d; color: #fca5a5; border: 1px solid #dc2626; }
+    .toast.info { background: #0c4a6e; color: #7dd3fc; border: 1px solid #0284c7; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    /* Explorer Styles */
+    .explorer-container {
+      display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start;
+    }
+    .explorer-sidebar {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 12px; padding: 16px; overflow: hidden;
+    }
+    .explorer-tree-wrap {
+      max-height: 600px; overflow-y: auto; margin-top: 10px;
+    }
+    .tree-node {
+      user-select: none; font-size: 13px; line-height: 1.4;
+    }
+    .tree-row {
+      display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .tree-row:hover { background: rgba(255,255,255,0.05); }
+    .tree-row.selected { background: rgba(56, 189, 248, 0.15); color: var(--accent); font-weight: 600; }
+    .tree-arrow {
+      width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center;
+      color: var(--text-muted); transition: transform 0.2s;
+    }
+    .tree-arrow.expanded { transform: rotate(90deg); }
+    .tree-icon {
+      color: var(--accent); display: inline-flex; align-items: center; justify-content: center;
+    }
+    .tree-icon.folder { color: #f59e0b; }
+    .tree-icon.file { color: #38bdf8; }
+    .tree-label {
+      flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; font-size: 12px;
+    }
+    .tree-override-badge {
+      font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 700; text-transform: uppercase;
+      background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+    .tree-children {
+      margin-left: 18px; border-left: 1px solid rgba(255,255,255,0.08); padding-left: 6px;
+    }
+    .tree-children.collapsed { display: none; }
+
+    /* Explorer Content Area */
+    .explorer-content {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 12px; padding: 20px; min-height: 500px;
+    }
+    .explorer-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+      padding-bottom: 12px; border-bottom: 1px solid var(--card-border);
+    }
+    .explorer-path-title {
+      font-size: 15px; font-weight: 600; font-family: monospace; display: flex; align-items: center; gap: 8px;
+    }
+    .tab-pills {
+      display: inline-flex; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--card-border);
+      border-radius: 6px; padding: 2px; gap: 2px;
+    }
+    .tab-pill {
+      background: transparent; border: none; color: var(--text-muted); font-size: 12px;
+      padding: 4px 12px; border-radius: 4px; cursor: pointer; transition: all 0.15s;
+    }
+    .tab-pill:hover { color: var(--text); }
+    .tab-pill.active { background: var(--accent); color: #0f172a; font-weight: 600; }
+
+    /* IDE Code Editor with Gutter & Live Linting */
+    .ide-editor-wrapper {
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--code-bg);
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s;
+    }
+    .ide-editor-wrapper:focus-within {
+      border-color: var(--accent);
+    }
+    .ide-editor-wrapper.has-error {
+      border-color: rgba(239, 68, 68, 0.7);
+    }
+    .ide-editor-body {
+      display: flex;
+      position: relative;
+      min-height: 200px;
+    }
+    .ide-editor-gutter {
+      width: 48px;
+      padding: 10px 0;
+      background: #060911;
+      border-right: 1px solid rgba(255, 255, 255, 0.07);
+      color: #475569;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 20px;
+      text-align: right;
+      user-select: none;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    .gutter-line {
+      padding-right: 10px;
+      position: relative;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .gutter-line.has-error {
+      background: rgba(239, 68, 68, 0.25);
+      color: #f87171;
+      font-weight: 700;
+    }
+    .gutter-error-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ef4444;
+      position: absolute;
+      left: 6px;
+      top: 7px;
+    }
+    .ide-editor-textarea {
+      flex: 1;
+      padding: 10px 14px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #f1f5f9;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 20px;
+      white-space: pre;
+      overflow-wrap: normal;
+      overflow-x: auto;
+      overflow-y: auto;
+      resize: vertical;
+      tab-size: 2;
+      box-sizing: border-box;
+    }
+    .ide-editor-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      background: #080d1a;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .ide-editor-status-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ide-editor-status-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: monospace;
+    }
+    .ide-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    .ide-status-pill.valid {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .ide-status-pill.error {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .ide-status-pill.checking {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <div class="header">
+    <div class="logo-area">
+      <div class="logo-icon"><span class="material-symbols-outlined" style="color:#0f172a; font-size:22px;">settings_suggest</span></div>
+      <div>
+        <div class="title">OpAMP Server Management</div>
+        <div class="subtitle">OpenTelemetry Configuration & Topology Control Plane (HA Supported)</div>
+      </div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-live"><span class="pulse-dot"></span> LIVE SSE</span>
+      <span id="mode-badge" class="badge badge-dev">Checking mode...</span>
+      <span class="badge" style="background: rgba(255,255,255,0.05); color: #94a3b8;">Endpoint: /v1/opamp</span>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('fleet')">Agents & Fleet</button>
+    <button class="tab-btn" onclick="switchTab('explorer')">Config Store Explorer</button>
+    <button class="tab-btn" onclick="switchTab('inspector')">Effective Config Inspector</button>
+    <button class="tab-btn" onclick="switchTab('priority')">Priority Order & Topology</button>
+    <button class="tab-btn" onclick="switchTab('gitops')">GitOps Permanent Guide</button>
+    <button class="tab-btn" onclick="switchTab('overrides')">Temporary Overrides (Redis TTL)</button>
+    <button class="tab-btn" onclick="switchTab('audit')">Audit & Webhooks</button>
+  </div>
+
+  <!-- Tab 1: Agent Fleet -->
+  <div id="tab-fleet" class="tab-content active">
+    <div class="grid-3" style="margin-bottom: 20px;">
+      <div class="stat-box">
+        <div class="stat-label">Connected Agents (Cluster Total)</div>
+        <div class="stat-value" id="stat-agents">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Active Redis Overrides</div>
+        <div class="stat-value" id="stat-overrides" style="color: var(--warning);">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Zero-Diff Guarantee</div>
+        <div class="stat-value" style="color: var(--success); font-size: 18px; line-height: 28px;">Active (No Unneeded Restarts)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>Connected OpenTelemetry Collectors & Agents (Real-Time Live View)</span>
+        <button class="btn btn-secondary btn-sm" onclick="loadFleet()">
+          <span class="material-symbols-outlined icon-sm">refresh</span>
+          <span>Refresh</span>
+        </button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Hostname</th>
+            <th>Environment</th>
+            <th>Role</th>
+            <th>Cluster</th>
+            <th>Status</th>
+            <th>Config Hash</th>
+            <th>Node ID</th>
+            <th>Last Seen</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="agent-table-body">
+          <tr><td colspan="9" style="text-align:center; color: var(--text-muted);">No agents currently connected. Connect an OTEL collector to ws://.../v1/opamp</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tab: Config Store Explorer (Directory Tree & Live Overrides) -->
+  <div id="tab-explorer" class="tab-content">
+    <div class="explorer-container">
+      <!-- Left: Interactive Directory Tree -->
+      <div class="explorer-sidebar">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px;">
+            <span class="material-symbols-outlined icon-sm" style="color:var(--accent);">folder_open</span>
+            <span>Configuration Store</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadStoreTree()">
+            <span class="material-symbols-outlined icon-sm">refresh</span>
+          </button>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px; font-family:monospace;" id="explorer-root-path">
+          Directory: /
+        </div>
+        <div class="explorer-tree-wrap" id="explorer-tree-root">
+          <div style="padding:16px; text-align:center; color:var(--text-muted); font-size:12px;">Loading directory structure...</div>
+        </div>
+      </div>
+
+      <!-- Right: Modern File & Override Viewer / Editor -->
+      <div class="explorer-content">
+        <div class="explorer-header">
+          <div class="explorer-path-title">
+            <span class="material-symbols-outlined" style="color:var(--accent);">description</span>
+            <span id="explorer-current-path">Select a configuration file</span>
+            <span id="explorer-override-badge" class="tree-override-badge" style="display:none;">Redis Override Active</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="tab-pills" id="explorer-view-tabs" style="display:none;">
+              <button type="button" class="tab-pill active" id="tab-pill-file" onclick="switchExplorerView('file')">File Content</button>
+              <button type="button" class="tab-pill" id="tab-pill-override" onclick="switchExplorerView('override')">Redis Override</button>
+              <button type="button" class="tab-pill" id="tab-pill-merged" onclick="switchExplorerView('merged')">Effective Merged</button>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btn-save-file-editor" style="display:none;" onclick="saveEditorFile()">
+              <span class="material-symbols-outlined icon-sm">save</span>
+              <span>Save File</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- File Metadata Banner -->
+        <div id="explorer-meta-banner" class="alert alert-info" style="display:none; margin-bottom:14px; font-size:12px;">
+          <div>
+            <strong>Layer: </strong><span id="explorer-meta-layer">-</span>
+            <span style="margin:0 8px; color:rgba(255,255,255,0.2);">|</span>
+            <strong>Target Scope: </strong><code id="explorer-meta-scope">-</code>
+            <span style="margin:0 8px; color:rgba(255,255,255,0.2);">|</span>
+            <strong>Status: </strong><span id="explorer-meta-status">-</span>
+          </div>
+        </div>
+
+        <!-- Empty state placeholder -->
+        <div id="explorer-empty-placeholder" style="padding:60px 20px; text-align:center; color:var(--text-muted);">
+          <span class="material-symbols-outlined" style="font-size:48px; color:rgba(255,255,255,0.1); display:block; margin-bottom:12px;">snippet_folder</span>
+          <div style="font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px;">No File Selected</div>
+          <div style="font-size:12px;">Click any configuration file from the directory tree on the left to inspect its contents and active overrides.</div>
+        </div>
+
+        <!-- File Content Editor / Viewer -->
+        <div id="explorer-file-view" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:11px; color:var(--text-muted);" id="explorer-editor-hint">Read-only view</span>
+            <span id="explorer-mode-badge-local" class="badge badge-dev" style="font-size:10px;">Dev Mode: Editable</span>
+          </div>
+          <div class="ide-editor-wrapper" id="explorer-editor-wrapper">
+            <div class="ide-editor-body">
+              <div class="ide-editor-gutter" id="explorer-editor-gutter"></div>
+              <textarea id="explorer-file-editor" class="ide-editor-textarea" rows="22" spellcheck="false"></textarea>
+            </div>
+            <div class="ide-editor-status" id="explorer-editor-status">
+              <div class="ide-editor-status-left">
+                <span class="ide-status-pill valid" id="explorer-lint-badge">
+                  <span class="material-symbols-outlined icon-sm">check</span>
+                  <span id="explorer-lint-text">YAML Valid</span>
+                </span>
+                <span id="explorer-lint-detail" style="color:var(--text-muted); font-size:11px;">No errors detected</span>
+              </div>
+              <div class="ide-editor-status-right">
+                <span id="explorer-editor-pos">Ln 1, Col 1</span>
+                <span>YAML</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Redis Override View (if exists at this level) -->
+        <div id="explorer-override-view" style="display:none;">
+          <div class="alert alert-warning" style="margin-bottom:10px; font-size:12px;">
+            <span>Active Redis temporary override detected at this level. This configuration takes immediate operational precedence over the GitOps file.</span>
+          </div>
+          <div class="code-view" id="explorer-override-content" style="max-height:480px;"></div>
+        </div>
+
+        <!-- Merged View -->
+        <div id="explorer-merged-view" style="display:none;">
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
+            Merged output of this file layer combined with the active Redis override for this scope:
+          </div>
+          <div class="code-view" id="explorer-merged-content" style="max-height:480px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Effective Config Inspector -->
+  <div id="tab-inspector" class="tab-content">
+    <div class="grid-2">
+      <!-- Selector & Provenance -->
+      <div>
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div class="card-title" style="margin:0;">Select Target Topology Context</div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="populateContextFromCatalog()" title="Pick from active connected agents">
+              <span class="material-symbols-outlined icon-sm">manage_search</span>
+              <span>Pick Connected Agent</span>
+            </button>
+          </div>
+          <div class="form-group">
+            <label>Environment</label>
+            <div class="autocomplete-wrap">
+              <input type="text" id="inspect-env" placeholder="e.g. prod, staging, dev" value="prod" onfocus="showContextSuggestions('env')" oninput="filterContextSuggestions('env')">
+              <div id="suggest-inspect-env" class="suggestions-box"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <div class="autocomplete-wrap">
+              <input type="text" id="inspect-role" placeholder="e.g. database, api-gateway, node-exporter" value="database" onfocus="showContextSuggestions('role')" oninput="filterContextSuggestions('role')">
+              <div id="suggest-inspect-role" class="suggestions-box"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Cluster</label>
+            <div class="autocomplete-wrap">
+              <input type="text" id="inspect-cluster" placeholder="e.g. us-east-1, eu-west-1" value="us-east-1" onfocus="showContextSuggestions('cluster')" oninput="filterContextSuggestions('cluster')">
+              <div id="suggest-inspect-cluster" class="suggestions-box"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Subdomain</label>
+            <div class="autocomplete-wrap">
+              <input type="text" id="inspect-subdomain" placeholder="e.g. payments, auth" value="" onfocus="showContextSuggestions('subdomain')" oninput="filterContextSuggestions('subdomain')">
+              <div id="suggest-inspect-subdomain" class="suggestions-box"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Hostname</label>
+            <div class="autocomplete-wrap">
+              <input type="text" id="inspect-host" placeholder="e.g. prod-db-01" value="prod-db-01" onfocus="showContextSuggestions('host')" oninput="filterContextSuggestions('host')">
+              <div id="suggest-inspect-host" class="suggestions-box"></div>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;" onclick="renderConfig()">Render Effective Configuration</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Evaluated Hierarchy Precedence</span>
+            <span style="font-size:11px; color:var(--text-muted);">Lower to Higher Precedence</span>
+          </div>
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Overlays merge in order. Higher level keys overwrite lower level keys. Lists deduplicate without duplicates.</p>
+          <ul class="provenance-list" id="provenance-list">
+            <li class="provenance-item"><span class="provenance-source">Click Render to view overlay order</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Rendered Output -->
+      <div class="card">
+        <div class="card-title">
+          <span>Effective Rendered YAML (Zero-Diff Reproducible)</span>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="copyConfig()">Copy</button>
+            <button class="btn btn-primary btn-sm" onclick="openOverrideStudioWithCurrent()">Apply Temp Override</button>
+          </div>
+        </div>
+        <div style="margin-bottom: 10px; font-size: 12px; color: var(--text-muted);">
+          SHA-256 Hash: <span id="inspect-hash" style="font-family: monospace; color: var(--accent);">-</span>
+        </div>
+        <div class="code-view" id="rendered-yaml"># Select context and click 'Render Effective Configuration'</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Priority Order & Topology Rules -->
+  <div id="tab-priority" class="tab-content">
+    <div class="card">
+      <div class="card-title">Overlay Priority Order & Merging Semantics</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+        When an OpenTelemetry collector requests configuration, the server merges layers starting from Base up to Redis Overrides.
+        <strong>Higher levels take strict precedence over lower levels.</strong>
+      </p>
+
+      <div class="priority-ladder">
+        <div class="priority-step highest">
+          <div><strong>Level 8: Redis Temporary Overrides</strong> <span class="badge badge-apply">HIGHEST PRECEDENCE</span></div>
+          <span>Key: <code>redis:override:&lt;scope&gt;</code> (Enforced TTL: 1h, 6h, 12h, 24h)</span>
+        </div>
+        <div class="priority-arrow">Overrides Level 7</div>
+        <div class="priority-step">
+          <div><strong>Level 7: Hostname Overlay</strong></div>
+          <span>Path: <code>hosts/{{.Hostname}}.yaml</code></span>
+        </div>
+        <div class="priority-arrow">Overrides Level 6</div>
+        <div class="priority-step">
+          <div><strong>Level 6: Environment-Role Overlay</strong></div>
+          <span>Path: <code>environments/{{.Environment}}/roles/{{.Role}}.yaml</code></span>
+        </div>
+        <div class="priority-arrow">Overrides Level 5</div>
+        <div class="priority-step">
+          <div><strong>Level 5: Role Overlay</strong></div>
+          <span>Path: <code>roles/{{.Role}}.yaml</code></span>
+        </div>
+        <div class="priority-arrow">Overrides Level 4</div>
+        <div class="priority-step">
+          <div><strong>Level 4: Subdomain Overlay</strong></div>
+          <span>Path: <code>subdomains/{{.Subdomain}}.yaml</code></span>
+        </div>
+        <div class="priority-arrow">Overrides Level 3</div>
+        <div class="priority-step">
+          <div><strong>Level 3: Cluster Overlay</strong></div>
+          <span>Path: <code>clusters/{{.Cluster}}.yaml</code></span>
+        </div>
+        <div class="priority-arrow">Overrides Level 2</div>
+        <div class="priority-step">
+          <div><strong>Level 2: Environment Overlay</strong></div>
+          <span>Path: <code>environments/{{.Environment}}.yaml</code></span>
+        </div>
+        <div class="priority-arrow">Overrides Level 1</div>
+        <div class="priority-step">
+          <div><strong>Level 1: Base Configuration</strong> <span class="badge" style="background:rgba(255,255,255,0.1);">LOWEST PRECEDENCE (Baseline)</span></div>
+          <span>Path: <code>base.yaml</code></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- How to add custom overlays via GitOps -->
+    <div class="card">
+      <div class="card-title">How to Add Custom Overlays in GitOps (Custom Hierarchy)</div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">
+        You can define your own topology dimensions (e.g. <code>regions/</code>, <code>clouds/</code>, <code>teams/</code>, <code>datacenters/</code>) by creating a <code>hierarchy.yaml</code> file in the root of your GitOps repository:
+      </p>
+      <div class="code-view"># hierarchy.yaml in your Git repository
+layers:
+  - level: 1
+    name: "Base"
+    path: "base.yaml"
+    description: "Fleet-wide baseline defaults"
+
+  - level: 2
+    name: "Cloud-Provider"
+    path: "clouds/{{.Cloud}}.yaml"
+    dimensions: ["Cloud"]
+    description: "AWS, GCP, Azure specific settings"
+
+  - level: 3
+    name: "Region"
+    path: "regions/{{.Region}}.yaml"
+    dimensions: ["Region"]
+    description: "Regional datacenter routing"
+
+  - level: 4
+    name: "Environment"
+    path: "environments/{{.Environment}}.yaml"
+    dimensions: ["Environment"]
+
+  - level: 5
+    name: "Role"
+    path: "roles/{{.Role}}.yaml"
+    dimensions: ["Role"]
+
+  - level: 6
+    name: "Host"
+    path: "hosts/{{.Hostname}}.yaml"
+    dimensions: ["Hostname"]
+
+  - level: 7
+    name: "Redis-TTL"
+    type: "redis"
+    path: "redis:override:{{.Hostname}}"
+    description: "Temporary operational override (Highest Precedence)"</div>
+    </div>
+  </div>
+
+  <!-- Tab 4: GitOps Permanent Guide -->
+  <div id="tab-gitops" class="tab-content">
+    <div class="alert alert-info">
+      <span class="material-symbols-outlined icon-sm" style="color:var(--accent);">info</span>
+      <span>Permanent configuration updates should follow GitOps workflows. Use the options below to identify the exact file and commit changes to your Git repository (Gitea / GitLab / GitHub).</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">GitOps Repository Change Guidance</div>
+      <div id="gitops-options-container">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+
+    <!-- Development Mode Inline File Writer -->
+    <div class="card" id="dev-writer-card" style="display:none;">
+      <div class="card-title">
+        <span>Development Mode: Direct Filesystem Editor</span>
+        <span class="badge badge-dev">Dev Only</span>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">In development mode, you can write directly to the local configuration repository.</p>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Layer</label>
+          <select id="dev-layer">
+            <option value="base">base</option>
+            <option value="environments">environments</option>
+            <option value="roles">roles</option>
+            <option value="clusters">clusters</option>
+            <option value="subdomains">subdomains</option>
+            <option value="hosts">hosts</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Name / Identifier</label>
+          <input type="text" id="dev-filename" placeholder="e.g. prod, database, or empty for base">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Configuration YAML</label>
+        <div class="ide-editor-wrapper" id="dev-editor-wrapper">
+          <div class="ide-editor-body">
+            <div class="ide-editor-gutter" id="dev-editor-gutter"></div>
+            <textarea id="dev-yaml" class="ide-editor-textarea" rows="12" placeholder="service:&#10;  telemetry:&#10;    logs:&#10;      level: info" spellcheck="false"></textarea>
+          </div>
+          <div class="ide-editor-status" id="dev-editor-status">
+            <div class="ide-editor-status-left">
+              <span class="ide-status-pill valid" id="dev-lint-badge">
+                <span class="material-symbols-outlined icon-sm">check</span>
+                <span id="dev-lint-text">YAML Ready</span>
+              </span>
+              <span id="dev-lint-detail" style="color:var(--text-muted); font-size:11px;">Enter configuration YAML</span>
+            </div>
+            <div class="ide-editor-status-right">
+              <span id="dev-editor-pos">Ln 1, Col 1</span>
+              <span>YAML</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-save-direct" onclick="saveDirectConfig()">
+        <span class="material-symbols-outlined icon-sm">save</span>
+        <span>Save File to Disk</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab 5: Temporary Overrides (Redis TTL) -->
+  <div id="tab-overrides" class="tab-content">
+    <div class="alert alert-warning">
+      <span class="material-symbols-outlined icon-sm" style="color:var(--warning);">bolt</span>
+      <span><strong>Emergency / Temporary Overrides</strong>: Applied directly via Redis with an enforced TTL. Takes precedence over all GitOps layers. When expired or revoked, automatically reverts safely with zero unneeded restarts.</span>
+    </div>
+
+    <div class="grid-2">
+      <!-- Override Studio Form -->
+      <div class="card">
+        <div class="card-title">New Temporary Override</div>
+
+        <!-- Interactive Target Scope & Autocomplete -->
+        <div class="form-group">
+          <label>Select Target Scope (Where to apply override)</label>
+          <div class="target-scope-filters">
+            <button type="button" class="filter-btn active" onclick="setScopeFilter('all', this)">All</button>
+            <button type="button" class="filter-btn" onclick="setScopeFilter('role', this)">Roles</button>
+            <button type="button" class="filter-btn" onclick="setScopeFilter('environment', this)">Environments</button>
+            <button type="button" class="filter-btn" onclick="setScopeFilter('host', this)">Hosts</button>
+            <button type="button" class="filter-btn" onclick="setScopeFilter('cluster', this)">Clusters</button>
+          </div>
+          <div class="autocomplete-wrap">
+            <input type="text" id="override-target" placeholder="Type or click to choose target, e.g. role:database, environment:prod" oninput="onTargetInput(this.value)" onfocus="onTargetFocus()" autocomplete="off">
+            <div id="target-suggestions-box" class="suggestions-box"></div>
+          </div>
+        </div>
+
+        <!-- Impact Assessment Panel (Appears once target is locked in) -->
+        <div id="target-impact-panel" class="impact-panel" style="display:none;">
+          <div class="impact-header">
+            <div>
+              <strong style="color:var(--accent);">Target Locked: </strong>
+              <span id="impact-target-label" style="font-weight:600; font-family:monospace;"></span>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="clearTargetLock()">Change Target</button>
+          </div>
+          <div class="impact-metrics">
+            <div class="impact-metric-box">
+              <div class="impact-metric-val" id="impact-total-hosts" style="color:var(--accent);">0</div>
+              <div class="impact-metric-lbl">Total Affected Hosts</div>
+            </div>
+            <div class="impact-metric-box">
+              <div class="impact-metric-val" id="impact-env-breakdown" style="font-size:12px; margin-top:2px;">None</div>
+              <div class="impact-metric-lbl">By Environment</div>
+            </div>
+            <div class="impact-metric-box">
+              <div class="impact-metric-val" id="impact-role-breakdown" style="font-size:12px; margin-top:2px;">None</div>
+              <div class="impact-metric-lbl">By Role</div>
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">Impacted Hostnames:</div>
+          <div id="impact-host-tags" class="impact-host-tags">
+            <!-- Host tags filled by JS -->
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Duration / TTL</label>
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setOverrideDuration('1h')">1 Hour</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setOverrideDuration('6h')">6 Hours</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setOverrideDuration('12h')">12 Hours</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="setOverrideDuration('24h')">24 Hours</button>
+          </div>
+          <input type="text" id="override-duration" value="6h" placeholder="e.g. 1h, 6h, 12h, 24h">
+        </div>
+        <div class="form-group">
+          <label>Operator Name / Identity</label>
+          <input type="text" id="override-author" placeholder="e.g. ops-alice@company.com">
+        </div>
+        <div class="form-group">
+          <label>Reason / Ticket ID</label>
+          <input type="text" id="override-reason" placeholder="e.g. INC-4029: Enable debug logging for slow query triage">
+        </div>
+        <div class="form-group">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label style="margin:0;">Overlay YAML Snippet</label>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-load-current-state" onclick="loadEntityCurrentState()" title="Load and edit current configuration for this entity">
+                <span class="material-symbols-outlined icon-sm">sync_alt</span>
+                <span>Load Current State</span>
+              </button>
+            </div>
+          </div>
+          <div class="ide-editor-wrapper" id="override-editor-wrapper">
+            <div class="ide-editor-body">
+              <div class="ide-editor-gutter" id="override-editor-gutter"></div>
+              <textarea id="override-yaml" class="ide-editor-textarea" rows="10" placeholder="Choose a target entity to load its current configuration..." spellcheck="false"></textarea>
+            </div>
+            <div class="ide-editor-status" id="override-editor-status">
+              <div class="ide-editor-status-left">
+                <span class="ide-status-pill valid" id="override-lint-badge">
+                  <span class="material-symbols-outlined icon-sm">check</span>
+                  <span id="override-lint-text">YAML Ready</span>
+                </span>
+                <span id="override-lint-detail" style="color:var(--text-muted); font-size:11px;">Enter YAML snippet</span>
+              </div>
+              <div class="ide-editor-status-right">
+                <span id="override-editor-pos">Ln 1, Col 1</span>
+                <span>YAML</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <button type="button" class="btn btn-primary" id="btn-review-apply" style="width:100%;" onclick="openConfirmationModal()">
+            <span class="material-symbols-outlined icon-sm">visibility</span>
+            <span>Review Diff & Apply Override...</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Overrides Table -->
+      <div class="card">
+        <div class="card-title">
+          <span>Active Overrides (Persisted in Redis Cluster)</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadOverrides()">
+            <span class="material-symbols-outlined icon-sm">refresh</span>
+            <span>Refresh</span>
+          </button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Target Scope</th>
+              <th>TTL Remaining</th>
+              <th>Author / Reason</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="overrides-table-body">
+            <tr><td colspan="4" style="text-align:center; color: var(--text-muted);">No active temporary overrides.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 6: Audit & Webhooks -->
+  <div id="tab-audit" class="tab-content">
+    <div class="card">
+      <div class="card-title">
+        <span>Configuration & Override Audit Event Stream</span>
+        <button class="btn btn-secondary btn-sm" onclick="loadAudit()">
+          <span class="material-symbols-outlined icon-sm">refresh</span>
+          <span>Refresh</span>
+        </button>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Every temporary override creation, update, revocation, and agent configuration push triggers an authenticated webhook with HMAC-SHA256 signature.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp (UTC)</th>
+            <th>Event Type</th>
+            <th>Actor</th>
+            <th>Target</th>
+            <th>Reason / Details</th>
+          </tr>
+        </thead>
+        <tbody id="audit-table-body">
+          <tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Loading audit history...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Live Agent Config & Diff Modal -->
+  <div id="agent-config-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <h3 id="modal-agent-title">Agent Configuration & Drift Inspection</h3>
+          <p id="modal-agent-subtitle" style="font-size:12px; color:var(--text-muted);"></p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="closeAgentModal()">
+          <span class="material-symbols-outlined icon-sm">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;">
+          <div id="modal-sync-badge"></div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="font-size:12px; color:var(--text-muted);">
+              Reported Hash: <code id="modal-reported-hash">-</code> | Expected Hash: <code id="modal-expected-hash">-</code>
+            </div>
+            <div class="diff-mode-switcher">
+              <button type="button" class="diff-mode-btn active" id="btn-agent-mode-side" onclick="switchAgentModalDiffMode('side')">Side by Side</button>
+              <button type="button" class="diff-mode-btn" id="btn-agent-mode-raw" onclick="switchAgentModalDiffMode('raw')">Raw Panes</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Synchronized GitLab-Style Side-by-Side Diff Table -->
+        <div id="modal-agent-side-view" class="diff-container" style="max-height:480px;">
+          <div class="diff-side-header-wrap">
+            <div class="diff-side-header-col">
+              <span>Running Config on VM / Pod (Reported)</span>
+              <span style="font-size:10px; color:var(--text-muted);">Current Active</span>
+            </div>
+            <div class="diff-side-header-col">
+              <span>Expected Effective Config (Computed by Server)</span>
+              <span style="font-size:10px; color:var(--accent);">Desired Target</span>
+            </div>
+          </div>
+          <div id="modal-agent-side-table-body"></div>
+        </div>
+
+        <!-- Raw Two-Column View (optional fallback) -->
+        <div id="modal-agent-raw-view" class="grid-2" style="display:none;">
+          <div>
+            <label>Running Config on VM / Pod (Reported by Collector)</label>
+            <div class="code-view" id="modal-reported-config" style="max-height:420px;">No reported config available yet.</div>
+          </div>
+          <div>
+            <label>Expected Effective Config (Computed by Server)</label>
+            <div class="code-view" id="modal-effective-config" style="max-height:420px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Override Confirmation & Diff Inspection Modal -->
+  <div id="override-confirm-modal" class="modal-backdrop">
+    <div class="modal-box" style="max-width: 1100px;">
+      <div class="modal-header">
+        <div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <h3 style="margin:0;">Confirm Temporary Redis Override</h3>
+            <span id="modal-confirm-scope-badge" class="badge badge-apply">Target Locked</span>
+          </div>
+          <p id="modal-confirm-subtitle" style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+            Review layer-level and effective host configuration changes before committing to Redis.
+          </p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="closeConfirmModal()">
+          <span class="material-symbols-outlined icon-sm">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Target & Scope Details Banner -->
+        <div class="alert alert-warning" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong>Target: </strong><code id="modal-confirm-target" style="font-size:13px; font-weight:700;">-</code>
+            <span style="margin:0 10px; color:rgba(255,255,255,0.2);">|</span>
+            <strong>Scope Level: </strong><span id="modal-confirm-level-name">-</span>
+            <span style="margin:0 10px; color:rgba(255,255,255,0.2);">|</span>
+            <strong>Impact: </strong><span id="modal-confirm-impact-count">-</span>
+            <span style="margin:0 10px; color:rgba(255,255,255,0.2);">|</span>
+            <strong>TTL: </strong><span id="modal-confirm-ttl">-</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted);">
+            Reason: <span id="modal-confirm-reason" style="font-style:italic;">-</span>
+          </div>
+        </div>
+
+        <!-- Diff Controls (View Mode & Granularity) -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <!-- Granularity Selector: Effective Diff vs Layer-Only Diff -->
+          <div style="display:flex; gap:6px;">
+            <button type="button" id="btn-diff-scope-effective" class="btn btn-secondary btn-sm active" onclick="switchDiffGranularity('effective')">
+              Effective Host Config Diff (Full Context)
+            </button>
+            <button type="button" id="btn-diff-scope-layer" class="btn btn-secondary btn-sm" onclick="switchDiffGranularity('layer')">
+              Level / Layer State Diff
+            </button>
+          </div>
+
+          <!-- Diff Display Mode: Compact Hunks vs Unified Inline vs Side-by-Side -->
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; color:var(--text-muted);">Diff Format:</span>
+            <div class="diff-mode-switcher">
+              <button type="button" class="diff-mode-btn active" id="btn-mode-side" onclick="switchDiffMode('side')">Side by Side</button>
+              <button type="button" class="diff-mode-btn" id="btn-mode-compact" onclick="switchDiffMode('compact')">Compact Hunks</button>
+              <button type="button" class="diff-mode-btn" id="btn-mode-inline" onclick="switchDiffMode('inline')">Full Inline</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Diff Output Container (Inline / Compact) -->
+        <div id="confirm-diff-view" class="diff-container">
+          <div style="padding:20px; text-align:center; color:var(--text-muted);">Generating diff comparison...</div>
+        </div>
+
+        <!-- GitLab-Style Side-by-Side Synchronized Diff Container -->
+        <div id="confirm-side-view" class="diff-container" style="display:none;">
+          <div class="diff-side-header-wrap">
+            <div class="diff-side-header-col">
+              <span id="side-left-label">Current Configuration (Before)</span>
+              <span style="font-size:10px; color:var(--text-muted);">Baseline</span>
+            </div>
+            <div class="diff-side-header-col">
+              <span id="side-right-label">Proposed Configuration (After Override)</span>
+              <span style="font-size:10px; color:var(--accent);">Active Override</span>
+            </div>
+          </div>
+          <div id="confirm-side-table-body"></div>
+        </div>
+      </div>
+
+      <!-- Modal Footer Action Buttons -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; pt:12px; border-top:1px solid var(--card-border);">
+        <div style="font-size:11px; color:var(--text-muted);">
+          <span>Zero-Diff Check: </span>
+          <span id="modal-confirm-diff-status" style="font-weight:600; color:#34d399;">Diff detected (Changes will take effect immediately)</span>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+          <button type="button" class="btn btn-primary" id="btn-confirm-apply" onclick="applyConfirmedOverride()">
+            <span class="material-symbols-outlined icon-sm">check</span>
+            <span>Confirm & Apply to Redis</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container (No native browser alerts) -->
+  <div id="toast-container" class="toast-container"></div>
+
+
+  <script>
+    let serverMode = 'development';
+    let cachedTargets = [];
+    let currentScopeFilter = 'all';
+
+    async function init() {
+      // Initialize IDE Editors with gutter and real-time YAML linting
+      explorerIDE = new IDEEditor({
+        wrapperId: 'explorer-editor-wrapper',
+        gutterId: 'explorer-editor-gutter',
+        textareaId: 'explorer-file-editor',
+        badgeId: 'explorer-lint-badge',
+        detailId: 'explorer-lint-detail',
+        posId: 'explorer-editor-pos',
+        onValidateChange: (valid) => {
+          const saveBtn = document.getElementById('btn-save-file-editor');
+          if (saveBtn) saveBtn.disabled = !valid;
+        }
+      });
+
+      overrideIDE = new IDEEditor({
+        wrapperId: 'override-editor-wrapper',
+        gutterId: 'override-editor-gutter',
+        textareaId: 'override-yaml',
+        badgeId: 'override-lint-badge',
+        detailId: 'override-lint-detail',
+        posId: 'override-editor-pos',
+        onValidateChange: (valid) => {
+          const btn = document.getElementById('btn-review-apply');
+          if (btn) btn.disabled = !valid;
+        }
+      });
+
+      devIDE = new IDEEditor({
+        wrapperId: 'dev-editor-wrapper',
+        gutterId: 'dev-editor-gutter',
+        textareaId: 'dev-yaml',
+        badgeId: 'dev-lint-badge',
+        detailId: 'dev-lint-detail',
+        posId: 'dev-editor-pos',
+        onValidateChange: (valid) => {
+          const saveBtn = document.getElementById('btn-save-direct');
+          if (saveBtn) saveBtn.disabled = !valid;
+        }
+      });
+
+      await loadStatus();
+      await loadFleet();
+      await loadTargetCatalog();
+      await loadOverrides();
+      await loadAudit();
+      loadStoreTree();
+      renderConfig();
+      setupSSE();
+
+      // Close all suggestion boxes if clicking outside
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.autocomplete-wrap')) {
+          document.querySelectorAll('.suggestions-box').forEach(b => b.classList.remove('open'));
+        }
+      });
+    }
+
+    // Real-Time Server-Sent Events (SSE)
+    function setupSSE() {
+      const evtSource = new EventSource('/api/events');
+      evtSource.addEventListener('agent_update', function() {
+        loadFleet();
+        loadStatus();
+        loadTargetCatalog();
+      });
+      evtSource.addEventListener('agent_disconnected', function() {
+        loadFleet();
+        loadStatus();
+        loadTargetCatalog();
+      });
+      evtSource.addEventListener('config_update', function() {
+        loadOverrides();
+        loadStatus();
+        loadStoreTree();
+      });
+      evtSource.addEventListener('cluster_sync', function() {
+        loadFleet();
+        loadOverrides();
+        loadStoreTree();
+      });
+    }
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(name));
+      if (activeBtn) activeBtn.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+
+      if (name === 'fleet') loadFleet();
+      if (name === 'explorer') loadStoreTree();
+      if (name === 'overrides') {
+        loadOverrides();
+        loadTargetCatalog();
+      }
+      if (name === 'audit') loadAudit();
+    }
+
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        serverMode = data.mode;
+        const badge = document.getElementById('mode-badge');
+        if (data.mode === 'production') {
+          badge.className = 'badge badge-prod';
+          badge.textContent = 'PRODUCTION MODE (GitOps Read-Only)';
+          document.getElementById('dev-writer-card').style.display = 'none';
+        } else {
+          badge.className = 'badge badge-dev';
+          badge.textContent = 'DEVELOPMENT MODE (Local Read/Write)';
+          document.getElementById('dev-writer-card').style.display = 'block';
+        }
+        document.getElementById('stat-agents').textContent = data.connected_agents;
+        document.getElementById('stat-overrides').textContent = data.active_overrides;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadFleet() {
+      try {
+        const res = await fetch('/api/agents');
+        const agents = await res.json();
+        const tbody = document.getElementById('agent-table-body');
+        if (!agents || agents.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: var(--text-muted);">No agents currently connected. Connect an OTEL collector to ws://.../v1/opamp</td></tr>';
+          return;
+        }
+        tbody.innerHTML = agents.map(a => `
+          <tr>
+            <td style="font-weight:600;">${a.hostname || a.instance_uid.slice(0, 8)}</td>
+            <td>${a.environment || '-'}</td>
+            <td>${a.role || '-'}</td>
+            <td>${a.cluster || '-'}</td>
+            <td>
+              <span class="badge ${a.status === 'IN_SYNC' ? 'badge-sync' : (a.status === 'APPLYING' ? 'badge-apply' : 'badge-fail')}">
+                ${a.status}
+              </span>
+            </td>
+            <td style="font-family: monospace; font-size: 11px;">${(a.effective_hash || '').slice(0, 10)}...</td>
+            <td style="font-size:12px; color:var(--text-muted);">${a.server_node_id || 'node-1'}</td>
+            <td style="font-size:12px; color:var(--text-muted);">${new Date(a.last_seen_at).toLocaleTimeString()}</td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-secondary btn-sm" onclick="inspectAgent('${a.hostname}', '${a.environment}', '${a.role}', '${a.cluster}', '${a.subdomain}')">Inspect</button>
+                <button class="btn btn-primary btn-sm" onclick="viewAgentLiveConfig('${a.instance_uid}')">Live Config & Diff</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    let currentAgentReportedYAML = '';
+    let currentAgentEffectiveYAML = '';
+
+    async function viewAgentLiveConfig(uid) {
+      try {
+        const res = await fetch('/api/agent/config?uid=' + encodeURIComponent(uid));
+        if (!res.ok) {
+          showToast('Failed to load agent config', 'error');
+          return;
+        }
+        const data = await res.json();
+        document.getElementById('modal-agent-title').textContent = `Agent: ${data.hostname || data.instance_uid}`;
+        document.getElementById('modal-agent-subtitle').textContent = `UID: ${data.instance_uid} | Environment: ${data.environment || '-'} | Role: ${data.role || '-'}`;
+        document.getElementById('modal-reported-hash').textContent = data.last_remote_hash || 'None reported';
+        document.getElementById('modal-expected-hash').textContent = data.effective_hash || 'None';
+
+        const syncBadge = document.getElementById('modal-sync-badge');
+        if (data.in_sync) {
+          syncBadge.innerHTML = '<span class="badge badge-sync"><span class="material-symbols-outlined icon-sm">check_circle</span> 100% IN SYNC (Zero Drift)</span>';
+        } else {
+          syncBadge.innerHTML = '<span class="badge badge-apply"><span class="material-symbols-outlined icon-sm">warning</span> DRIFT DETECTED / PENDING PUSH</span>';
+        }
+
+        currentAgentReportedYAML = data.reported_config_yaml || '# No reported config sent yet by agent.\n# When using standard OpAMP agent/supervisor, it sends EffectiveConfig automatically.';
+        currentAgentEffectiveYAML = data.effective_config_yaml || '# No effective config rendered.';
+
+        // Populate raw panes with syntax-highlighted YAML
+        document.getElementById('modal-reported-config').innerHTML = highlightYAML(currentAgentReportedYAML);
+        document.getElementById('modal-effective-config').innerHTML = highlightYAML(currentAgentEffectiveYAML);
+
+        // Populate synchronized GitLab side-by-side diff table
+        const sideTableEl = document.getElementById('modal-agent-side-table-body');
+        sideTableEl.innerHTML = renderSideBySideTableDiffHTML(currentAgentReportedYAML, currentAgentEffectiveYAML);
+
+        switchAgentModalDiffMode('side');
+        document.getElementById('agent-config-modal').classList.add('open');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function switchAgentModalDiffMode(mode) {
+      const sideView = document.getElementById('modal-agent-side-view');
+      const rawView = document.getElementById('modal-agent-raw-view');
+      const btnSide = document.getElementById('btn-agent-mode-side');
+      const btnRaw = document.getElementById('btn-agent-mode-raw');
+
+      if (mode === 'side') {
+        sideView.style.display = 'block';
+        rawView.style.display = 'none';
+        btnSide.classList.add('active');
+        btnRaw.classList.remove('active');
+      } else {
+        sideView.style.display = 'none';
+        rawView.style.display = 'grid';
+        btnSide.classList.remove('active');
+        btnRaw.classList.add('active');
+      }
+    }
+
+    function closeAgentModal() {
+      document.getElementById('agent-config-modal').classList.remove('open');
+    }
+
+    // Target Scope Catalog & Autocomplete
+    async function loadTargetCatalog() {
+      try {
+        const res = await fetch('/api/targets');
+        const data = await res.json();
+        cachedTargets = data.targets || [];
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function setScopeFilter(scope, btn) {
+      currentScopeFilter = scope;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const val = document.getElementById('override-target').value;
+      renderSuggestions(val);
+    }
+
+    function onTargetFocus() {
+      const val = document.getElementById('override-target').value;
+      renderSuggestions(val);
+    }
+
+    function onTargetInput(val) {
+      renderSuggestions(val);
+    }
+
+    function renderSuggestions(query) {
+      const box = document.getElementById('target-suggestions-box');
+      const q = (query || '').toLowerCase().trim();
+
+      let filtered = cachedTargets.filter(t => {
+        if (currentScopeFilter !== 'all' && t.type !== currentScopeFilter) {
+          return false;
+        }
+        if (!q) return true;
+        return t.label.toLowerCase().includes(q) || t.target_key.toLowerCase().includes(q) || t.value.toLowerCase().includes(q);
+      });
+
+      if (filtered.length === 0) {
+        box.innerHTML = `<div style="padding:10px 14px; color:var(--text-muted); font-size:12px;">No matching targets found. You can enter a custom target directly: <code>${query}</code></div>`;
+        box.classList.add('open');
+        return;
+      }
+
+      box.innerHTML = filtered.map(t => {
+        const envParts = Object.entries(t.environments || {}).map(([k,v]) => `${k}: ${v}`).join(', ');
+        const envSummary = envParts ? `(${envParts})` : '';
+        return `
+          <div class="suggestion-item" onclick="selectTarget('${t.target_key}')">
+            <div class="suggestion-title">
+              <span class="suggestion-badge badge-scope-${t.type}">${t.type}</span>
+              <span>${t.target_key}</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); text-align:right;">
+              <span style="color:${t.total_hosts > 0 ? 'var(--accent)' : 'inherit'}; font-weight:600;">${t.total_hosts} hosts</span>
+              <span style="margin-left:4px;">${envSummary}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      box.classList.add('open');
+    }
+
+    async function selectTarget(targetKey) {
+      document.getElementById('override-target').value = targetKey;
+      document.getElementById('target-suggestions-box').classList.remove('open');
+      await lockInTargetImpact(targetKey);
+    }
+
+    let currentEntityStateYAML = '';
+
+    async function lockInTargetImpact(targetKey, forcePopulateEditor = false) {
+      try {
+        const res = await fetch('/api/overrides/impact', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ target: targetKey })
+        });
+        const data = await res.json();
+
+        document.getElementById('impact-target-label').textContent = data.target;
+        document.getElementById('impact-total-hosts').textContent = `${data.total_hosts} Host${data.total_hosts === 1 ? '' : 's'}`;
+
+        const envSummary = Object.entries(data.by_environment || {}).map(([k,v]) => `${k} (${v})`).join(', ') || 'None';
+        document.getElementById('impact-env-breakdown').textContent = envSummary;
+
+        const roleSummary = Object.entries(data.by_role || {}).map(([k,v]) => `${k} (${v})`).join(', ') || 'None';
+        document.getElementById('impact-role-breakdown').textContent = roleSummary;
+
+        const hostTagsContainer = document.getElementById('impact-host-tags');
+        if (data.hosts && data.hosts.length > 0) {
+          hostTagsContainer.innerHTML = data.hosts.map(h => `
+            <span class="host-tag">${h.hostname || 'unknown'} <span style="color:var(--accent);">(${h.environment || '-'})</span></span>
+          `).join('');
+        } else {
+          hostTagsContainer.innerHTML = '<span style="font-size:11px; color:var(--text-muted);">No currently connected hosts match this scope. Target will take effect when matching hosts connect.</span>';
+        }
+
+        document.getElementById('target-impact-panel').style.display = 'block';
+
+        // Update current entity configuration state
+        currentEntityStateYAML = data.current_state_yaml || '';
+        const yamlTextarea = document.getElementById('override-yaml');
+        const entityLabel = data.scope_level_name || data.target;
+
+        if (currentEntityStateYAML) {
+          yamlTextarea.placeholder = `# Current configuration for ${entityLabel}:\n${currentEntityStateYAML}`;
+          // If forcePopulateEditor is true OR editor currently has no custom override typed, populate with current state
+          const currentVal = overrideIDE ? overrideIDE.getValue().trim() : yamlTextarea.value.trim();
+          if (forcePopulateEditor || !currentVal) {
+            if (overrideIDE) {
+              overrideIDE.setValue(currentEntityStateYAML);
+            } else {
+              yamlTextarea.value = currentEntityStateYAML;
+            }
+            showToast(`Loaded current configuration for ${entityLabel} ready for editing`, 'info');
+          }
+        } else {
+          yamlTextarea.placeholder = `# No prior configuration for ${entityLabel}. Enter YAML snippet to apply override...`;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function clearTargetLock() {
+      document.getElementById('target-impact-panel').style.display = 'none';
+      currentEntityStateYAML = '';
+      const yamlTextarea = document.getElementById('override-yaml');
+      if (yamlTextarea) {
+        yamlTextarea.placeholder = 'Choose a target entity to load its current configuration...';
+      }
+      document.getElementById('override-target').focus();
+      renderSuggestions('');
+    }
+
+    // Context Suggestions for "Select Target Topology Context"
+    function showContextSuggestions(field) {
+      filterContextSuggestions(field);
+    }
+
+    function filterContextSuggestions(field) {
+      const input = document.getElementById('inspect-' + field);
+      const box = document.getElementById('suggest-inspect-' + field);
+      if (!input || !box) return;
+
+      const q = (input.value || '').toLowerCase().trim();
+      let typeKey = field;
+      if (field === 'env') typeKey = 'environment';
+
+      // Discovered options from cachedTargets
+      const targetMatches = cachedTargets.filter(t => t.type === typeKey);
+      const seen = new Set();
+      let list = [];
+
+      targetMatches.forEach(t => {
+        seen.add(t.value);
+        list.push({
+          val: t.value,
+          label: `${t.type}: ${t.value}`,
+          hosts: t.total_hosts || 0,
+          envs: t.environments || {}
+        });
+      });
+
+      // Default fallbacks if empty
+      const defaults = {
+        env: ['prod', 'staging', 'dev'],
+        role: ['mac-work', 'mac-dev', 'database', 'node-exporter', 'clickhouse', 'api-gateway', 'frontend'],
+        cluster: ['us-east-1', 'us-west-2', 'eu-west-1'],
+        subdomain: ['payments', 'auth', 'analytics', 'ingress'],
+        host: ['prod-db-01', 'prod-db-02', 'prod-api-01']
+      };
+
+      (defaults[field] || []).forEach(v => {
+        if (!seen.has(v)) {
+          seen.add(v);
+          list.push({
+            val: v,
+            label: `${typeKey}: ${v}`,
+            hosts: 0,
+            envs: {}
+          });
+        }
+      });
+
+      const filtered = list.filter(item => !q || item.val.toLowerCase().includes(q));
+      if (filtered.length === 0) {
+        box.innerHTML = `<div style="padding:10px 14px; font-size:12px; color:var(--text-muted);">No suggestions matching "${escapeHTML(q)}"</div>`;
+      } else {
+        box.innerHTML = filtered.map(item => {
+          const hostBadge = item.hosts > 0 
+            ? `<span style="font-size:11px; color:var(--accent); font-weight:600;">${item.hosts} host${item.hosts === 1 ? '' : 's'}</span>`
+            : `<span style="font-size:10px; color:var(--text-muted);">catalog</span>`;
+          return `
+            <div class="suggestion-item" onclick="selectContextValue('${field}', '${escapeHTML(item.val)}')">
+              <div class="suggestion-title">
+                <span class="suggestion-badge badge-scope-${typeKey}">${typeKey}</span>
+                <span>${escapeHTML(item.val)}</span>
+              </div>
+              <div style="text-align:right;">
+                ${hostBadge}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      box.classList.add('open');
+    }
+
+    function selectContextValue(field, val) {
+      const input = document.getElementById('inspect-' + field);
+      const box = document.getElementById('suggest-inspect-' + field);
+      if (input) input.value = val;
+      if (box) box.classList.remove('open');
+      renderConfig();
+    }
+
+    async function populateContextFromCatalog() {
+      try {
+        const res = await fetch('/api/agents');
+        const agents = await res.json();
+        if (agents && agents.length > 0) {
+          const a = agents[0];
+          document.getElementById('inspect-host').value = a.hostname || '';
+          document.getElementById('inspect-env').value = a.environment || '';
+          document.getElementById('inspect-role').value = a.role || '';
+          document.getElementById('inspect-cluster').value = a.cluster || '';
+          document.getElementById('inspect-subdomain').value = a.subdomain || '';
+          showToast(`Populated topology context from live agent: ${a.hostname || a.instance_uid}`, 'info');
+          renderConfig();
+        } else {
+          showToast('No active agents connected. Picked defaults.', 'info');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function inspectAgent(host, env, role, cluster, subdomain) {
+      document.getElementById('inspect-host').value = host || '';
+      document.getElementById('inspect-env').value = env || '';
+      document.getElementById('inspect-role').value = role || '';
+      document.getElementById('inspect-cluster').value = cluster || '';
+      document.getElementById('inspect-subdomain').value = subdomain || '';
+      switchTab('inspector');
+      renderConfig();
+    }
+
+    async function renderConfig() {
+      const payload = {
+        environment: document.getElementById('inspect-env').value,
+        role: document.getElementById('inspect-role').value,
+        cluster: document.getElementById('inspect-cluster').value,
+        subdomain: document.getElementById('inspect-subdomain').value,
+        hostname: document.getElementById('inspect-host').value,
+      };
+
+      try {
+        const res = await fetch('/api/render', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        document.getElementById('rendered-yaml').innerHTML = highlightYAML(data.yaml || '# Empty Configuration');
+        document.getElementById('inspect-hash').textContent = data.hash || '-';
+
+        // Render provenance with explicit priority level badges
+        const provList = document.getElementById('provenance-list');
+        if (data.provenance && data.provenance.layers) {
+          provList.innerHTML = data.provenance.layers.map(l => `
+            <li class="provenance-item ${l.active ? 'active' : ''}">
+              <div class="provenance-info">
+                <div class="provenance-level">L${l.level}</div>
+                <div>
+                  <div class="provenance-name">
+                    ${l.name}
+                    ${l.active ? '<span class="badge badge-sync" style="padding:1px 6px; font-size:10px;">ACTIVE</span>' : '<span style="color:var(--text-muted); font-size:11px;">(No file match)</span>'}
+                    ${l.level === 8 ? '<span class="badge badge-apply" style="padding:1px 6px; font-size:10px;">HIGHEST PRIORITY</span>' : ''}
+                    ${l.level === 1 ? '<span class="badge" style="padding:1px 6px; font-size:10px; background:rgba(255,255,255,0.1);">BASELINE</span>' : ''}
+                  </div>
+                  <div class="provenance-source">${l.source}</div>
+                </div>
+              </div>
+              <span style="font-size: 11px; color: var(--text-muted);">${l.description}</span>
+            </li>
+          `).join('');
+        }
+
+        // Render GitOps guides
+        const gitContainer = document.getElementById('gitops-options-container');
+        if (data.git_guide) {
+          gitContainer.innerHTML = data.git_guide.map(g => `
+            <div class="git-guide-item">
+              <div class="git-guide-header">
+                <span class="git-guide-scope">${g.scope}</span>
+                <span class="git-guide-path">${g.file_path}</span>
+              </div>
+              <div class="git-guide-desc">${g.description}</div>
+              <div class="code-view" style="max-height:120px; margin-bottom:8px;">${highlightYAML(g.sample_git)}</div>
+              ${g.edit_url ? `<a href="${g.edit_url}" target="_blank" class="btn btn-secondary btn-sm">Open in Gitea Web Editor</a>` : ''}
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function copyConfig() {
+      const text = document.getElementById('rendered-yaml').textContent;
+      navigator.clipboard.writeText(text);
+      showToast('Copied configuration to clipboard!', 'success');
+    }
+
+    function openOverrideStudioWithCurrent() {
+      const host = (document.getElementById('inspect-host').value || '').trim();
+      const hostTarget = 'host:' + (host || 'prod-db-01');
+
+      // Switch to Temporary Overrides tab
+      switchTab('overrides');
+
+      // Set the most granular filter ('host') active in the UI
+      const hostFilterBtn = Array.from(document.querySelectorAll('.filter-btn')).find(b => b.textContent.trim().toLowerCase() === 'hosts');
+      if (hostFilterBtn) {
+        setScopeFilter('host', hostFilterBtn);
+      } else {
+        currentScopeFilter = 'host';
+      }
+
+      // Set target value in input
+      const targetInput = document.getElementById('override-target');
+      if (targetInput) targetInput.value = hostTarget;
+
+      // Lock in impact and force populate the editor with the host configuration
+      lockInTargetImpact(hostTarget, true);
+    }
+
+    function setOverrideDuration(dur) {
+      document.getElementById('override-duration').value = dur;
+    }
+
+    function loadEntityCurrentState() {
+      const target = document.getElementById('override-target').value.trim();
+      if (!target) {
+        showToast('Please select or choose a target entity first', 'info');
+        document.getElementById('override-target').focus();
+        return;
+      }
+
+      if (!currentEntityStateYAML) {
+        showToast(`No prior configuration found for ${target}. You can write a new overlay snippet directly.`, 'info');
+        return;
+      }
+
+      if (overrideIDE) {
+        overrideIDE.setValue(currentEntityStateYAML);
+      } else {
+        document.getElementById('override-yaml').value = currentEntityStateYAML;
+      }
+      showToast(`Current state for ${target} loaded into editor`, 'success');
+    }
+
+    // Toast Notification System (replaces disruptive browser alerts)
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const icon = type === 'success' ? 'check' : (type === 'error' ? 'close' : 'info');
+      toast.innerHTML = `<span class="material-symbols-outlined icon-sm">${icon}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // IDE Editor Engine with Line Numbers, Live Linting, & Error Markers
+    class IDEEditor {
+      constructor(options) {
+        this.wrapper = document.getElementById(options.wrapperId);
+        this.gutter = document.getElementById(options.gutterId);
+        this.textarea = document.getElementById(options.textareaId);
+        this.badge = document.getElementById(options.badgeId);
+        this.text = document.getElementById(options.textId);
+        this.detail = document.getElementById(options.detailId);
+        this.pos = document.getElementById(options.posId);
+        this.onValidateChange = options.onValidateChange || null;
+        this.timer = null;
+        this.lastValid = true;
+        this.errors = [];
+
+        this.init();
+      }
+
+      init() {
+        if (!this.textarea || !this.gutter) return;
+
+        // Synchronize scroll between textarea and gutter
+        this.textarea.addEventListener('scroll', () => {
+          this.gutter.scrollTop = this.textarea.scrollTop;
+        });
+
+        // Update line numbers & cursor position on input and cursor movement
+        this.textarea.addEventListener('input', () => {
+          this.updateGutter();
+          this.updateCursorPos();
+          this.debounceValidate();
+        });
+
+        this.textarea.addEventListener('keyup', () => this.updateCursorPos());
+        this.textarea.addEventListener('click', () => this.updateCursorPos());
+
+        // Tab key support for 2-space YAML indent
+        this.textarea.addEventListener('keydown', (e) => {
+          if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = this.textarea.selectionStart;
+            const end = this.textarea.selectionEnd;
+            this.textarea.value = this.textarea.value.substring(0, start) + '  ' + this.textarea.value.substring(end);
+            this.textarea.selectionStart = this.textarea.selectionEnd = start + 2;
+            this.updateGutter();
+            this.debounceValidate();
+          }
+        });
+
+        this.updateGutter();
+      }
+
+      updateGutter(errorLines = []) {
+        const text = this.textarea.value;
+        const lineCount = Math.max(1, text.split('\n').length);
+        let gutterHTML = '';
+        for (let i = 1; i <= lineCount; i++) {
+          const isErr = errorLines.includes(i);
+          gutterHTML += `
+            <div class="gutter-line ${isErr ? 'has-error' : ''}" data-line="${i}" title="${isErr ? 'YAML Syntax Error' : ''}">
+              ${isErr ? '<span class="gutter-error-dot"></span>' : ''}
+              <span>${i}</span>
+            </div>
+          `;
+        }
+        this.gutter.innerHTML = gutterHTML;
+        this.gutter.scrollTop = this.textarea.scrollTop;
+      }
+
+      updateCursorPos() {
+        if (!this.pos) return;
+        const text = this.textarea.value;
+        const selStart = this.textarea.selectionStart;
+        const lines = text.substring(0, selStart).split('\n');
+        const curLine = lines.length;
+        const curCol = lines[lines.length - 1].length + 1;
+        this.pos.textContent = `Ln ${curLine}, Col ${curCol}`;
+      }
+
+      debounceValidate() {
+        clearTimeout(this.timer);
+        if (this.badge) {
+          this.badge.className = 'ide-status-pill checking';
+          this.badge.innerHTML = '<span class="material-symbols-outlined icon-sm">sync</span><span>Checking...</span>';
+        }
+        this.timer = setTimeout(() => this.validate(), 350);
+      }
+
+      async validate() {
+        const yamlContent = this.textarea.value;
+        if (!yamlContent.trim()) {
+          this.setValidState('Empty YAML (Baseline Defaults)');
+          this.updateGutter([]);
+          if (this.wrapper) this.wrapper.classList.remove('has-error');
+          if (this.onValidateChange) this.onValidateChange(true, []);
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/config/validate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ yaml: yamlContent })
+          });
+
+          if (!res.ok) {
+            this.setErrorState(1, 'Failed to validate YAML format');
+            return;
+          }
+
+          const data = await res.json();
+          if (data.valid) {
+            this.setValidState('YAML Valid (No syntax errors)');
+            this.updateGutter([]);
+            if (this.wrapper) this.wrapper.classList.remove('has-error');
+            if (this.onValidateChange) this.onValidateChange(true, []);
+          } else {
+            const errs = data.errors || [];
+            const errLines = errs.map(e => e.line);
+            const firstErr = errs[0] || { line: 1, message: 'Syntax error' };
+            this.setErrorState(firstErr.line, firstErr.message);
+            this.updateGutter(errLines);
+            if (this.wrapper) this.wrapper.classList.add('has-error');
+            if (this.onValidateChange) this.onValidateChange(false, errs);
+          }
+        } catch (e) {
+          console.error('Linting request failed:', e);
+        }
+      }
+
+      setValidState(msg) {
+        this.lastValid = true;
+        if (this.badge) {
+          this.badge.className = 'ide-status-pill valid';
+          this.badge.innerHTML = '<span class="material-symbols-outlined icon-sm">check</span><span>YAML Valid</span>';
+        }
+        if (this.detail) {
+          this.detail.textContent = msg;
+          this.detail.style.color = '#94a3b8';
+        }
+      }
+
+      setErrorState(line, msg) {
+        this.lastValid = false;
+        if (this.badge) {
+          this.badge.className = 'ide-status-pill error';
+          this.badge.innerHTML = `<span class="material-symbols-outlined icon-sm">close</span><span>Error on Ln ${line}</span>`;
+        }
+        if (this.detail) {
+          this.detail.textContent = msg;
+          this.detail.style.color = '#f87171';
+        }
+      }
+
+      setValue(val) {
+        if (!this.textarea) return;
+        this.textarea.value = val;
+        this.updateGutter();
+        this.updateCursorPos();
+        this.validate();
+      }
+
+      getValue() {
+        return this.textarea ? this.textarea.value : '';
+      }
+    }
+
+    let explorerIDE = null;
+    let overrideIDE = null;
+    let devIDE = null;
+
+    // Confirmation & Diff State
+    let currentPreviewData = null;
+    let currentDiffGranularity = 'effective'; // 'effective' or 'layer'
+    let currentDiffMode = 'side';             // default to side-by-side GitLab view
+
+    async function openConfirmationModal() {
+      await fetchAndShowDiffModal(true);
+    }
+
+    async function fetchAndShowDiffModal(isConfirmation) {
+      const target = document.getElementById('override-target').value.trim();
+      const yaml = document.getElementById('override-yaml').value.trim();
+      const duration = document.getElementById('override-duration').value.trim() || '6h';
+      const reason = document.getElementById('override-reason').value.trim() || 'Temporary operational override';
+      const author = document.getElementById('override-author').value.trim() || 'operator';
+
+      if (!target) {
+        showToast('Please select or enter a Target Scope first', 'error');
+        document.getElementById('override-target').focus();
+        return;
+      }
+      if (!yaml) {
+        showToast('Please enter an Overlay YAML snippet to apply', 'error');
+        document.getElementById('override-yaml').focus();
+        return;
+      }
+
+      // Fetch preview comparison from server
+      try {
+        const res = await fetch('/api/overrides/preview', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ target: target, config_yaml: yaml })
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          showToast('Failed to generate preview: ' + errText, 'error');
+          return;
+        }
+
+        const data = await res.json();
+        currentPreviewData = data;
+
+        // Populate Modal Headers
+        document.getElementById('modal-confirm-target').textContent = data.target;
+        document.getElementById('modal-confirm-level-name').textContent = data.scope_level_name;
+        document.getElementById('modal-confirm-impact-count').textContent =
+          data.total_hosts > 0 ? `${data.total_hosts} Host(s) Affected` : `No active hosts (Pending connection)`;
+        document.getElementById('modal-confirm-ttl').textContent = duration;
+        document.getElementById('modal-confirm-reason').textContent = reason;
+        document.getElementById('modal-confirm-scope-badge').textContent = `Scope: ${data.scope_type.toUpperCase()}`;
+
+        // Subtitle customization based on target scope
+        const subtitle = document.getElementById('modal-confirm-subtitle');
+        if (data.scope_type === 'host') {
+          subtitle.textContent = `Inspecting exact diff for host ${data.sample_host || data.target}.`;
+        } else {
+          subtitle.textContent = `Applied at ${data.scope_level_name}. Showing layer-level state change and representative sample host (${data.sample_host || 'generic context'}).`;
+        }
+
+        // Render Diff view
+        renderDiffModal();
+
+        // Open Modal
+        document.getElementById('override-confirm-modal').classList.add('open');
+      } catch (e) {
+        console.error(e);
+        showToast('Network error while generating preview', 'error');
+      }
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('override-confirm-modal').classList.remove('open');
+    }
+
+    function switchDiffGranularity(granularity) {
+      currentDiffGranularity = granularity;
+      document.getElementById('btn-diff-scope-effective').classList.toggle('active', granularity === 'effective');
+      document.getElementById('btn-diff-scope-layer').classList.toggle('active', granularity === 'layer');
+      renderDiffModal();
+    }
+
+    function switchDiffMode(mode) {
+      currentDiffMode = mode;
+      document.querySelectorAll('.diff-mode-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-mode-' + mode).classList.add('active');
+      renderDiffModal();
+    }
+
+    function renderDiffModal() {
+      if (!currentPreviewData) return;
+
+      const diffContainer = document.getElementById('confirm-diff-view');
+      const sideContainer = document.getElementById('confirm-side-view');
+
+      let beforeText = '';
+      let afterText = '';
+      let contextLabel = '';
+
+      if (currentDiffGranularity === 'layer') {
+        beforeText = currentPreviewData.layer_current_yaml || '# No layer config\n';
+        afterText = currentPreviewData.layer_proposed_yaml || '# No layer config\n';
+        contextLabel = `${currentPreviewData.scope_level_name} Layer State`;
+      } else {
+        beforeText = currentPreviewData.effective_current_yaml || '# No effective config\n';
+        afterText = currentPreviewData.effective_proposed_yaml || '# No effective config\n';
+        contextLabel = `Effective Merged Config (${currentPreviewData.sample_host || currentPreviewData.target})`;
+      }
+
+      // Check Zero-Diff condition
+      const statusBadge = document.getElementById('modal-confirm-diff-status');
+      if (beforeText === afterText) {
+        statusBadge.textContent = 'Zero-Diff: No configuration change detected (Zero restarts will occur)';
+        statusBadge.style.color = '#38bdf8';
+      } else {
+        statusBadge.textContent = 'Diff detected: Configuration will cleanly update target collectors';
+        statusBadge.style.color = '#34d399';
+      }
+
+      if (currentDiffMode === 'side') {
+        diffContainer.style.display = 'none';
+        sideContainer.style.display = 'block';
+        document.getElementById('side-left-label').textContent = `${contextLabel} (Current)`;
+        document.getElementById('side-right-label').textContent = `${contextLabel} (Proposed with Override)`;
+        
+        const sideTableEl = document.getElementById('confirm-side-table-body');
+        sideTableEl.innerHTML = renderSideBySideTableDiffHTML(beforeText, afterText);
+      } else {
+        sideContainer.style.display = 'none';
+        diffContainer.style.display = 'block';
+
+        const lines = computeLCSDiff(beforeText, afterText);
+        let html = '';
+
+        if (currentDiffMode === 'compact') {
+          html = renderCompactDiffHTML(lines, contextLabel);
+        } else {
+          // Full inline diff
+          html = renderFullInlineDiffHTML(lines);
+        }
+
+        diffContainer.innerHTML = html;
+      }
+    }
+
+    // YAML Syntax Highlighter for IDE styling
+    function highlightYAML(yamlText) {
+      if (!yamlText) return '';
+      const lines = yamlText.split('\n');
+      return lines.map(line => {
+        // Comment lines
+        if (/^\s*#/.test(line)) {
+          return `<span class="yaml-comment">${escapeHTML(line)}</span>`;
+        }
+        // Match key: value or list item - key: value
+        const kvMatch = line.match(/^(\s*(?:-\s*)?)([\w\-./@]+)(\s*:)(.*)$/);
+        if (kvMatch) {
+          const prefix = escapeHTML(kvMatch[1]);
+          const key = `<span class="yaml-key">${escapeHTML(kvMatch[2])}</span>`;
+          const colon = `<span class="yaml-punct">${escapeHTML(kvMatch[3])}</span>`;
+          let val = kvMatch[4];
+          let valHighlighted = '';
+
+          // Check if there is an inline comment
+          let commentPart = '';
+          const cIdx = val.indexOf('#');
+          if (cIdx !== -1) {
+            commentPart = `<span class="yaml-comment">${escapeHTML(val.substring(cIdx))}</span>`;
+            val = val.substring(0, cIdx);
+          }
+
+          const trimmed = val.trim();
+          if (/^(true|false|yes|no)$/i.test(trimmed)) {
+            valHighlighted = val.replace(trimmed, `<span class="yaml-bool">${trimmed}</span>`);
+          } else if (/^[-+]?[0-9]+(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?$/.test(trimmed) || /^[0-9]+[smhd]$/i.test(trimmed)) {
+            valHighlighted = val.replace(trimmed, `<span class="yaml-num">${trimmed}</span>`);
+          } else if (/^(null|~)$/i.test(trimmed)) {
+            valHighlighted = val.replace(trimmed, `<span class="yaml-null">${trimmed}</span>`);
+          } else if (/^["'].*["']$/.test(trimmed)) {
+            valHighlighted = val.replace(trimmed, `<span class="yaml-str">${escapeHTML(trimmed)}</span>`);
+          } else if (trimmed) {
+            valHighlighted = escapeHTML(val);
+          } else {
+            valHighlighted = val;
+          }
+
+          return prefix + key + colon + valHighlighted + commentPart;
+        }
+
+        // List item - value
+        const listMatch = line.match(/^(\s*-\s+)(.*)$/);
+        if (listMatch) {
+          const prefix = `<span class="yaml-punct">${escapeHTML(listMatch[1])}</span>`;
+          return prefix + escapeHTML(listMatch[2]);
+        }
+
+        return escapeHTML(line);
+      }).join('\n');
+    }
+
+    // Line Diff Computation
+    function computeLCSDiff(textA, textB) {
+      const a = (textA || '').split('\n');
+      const b = (textB || '').split('\n');
+      const diff = [];
+      let i = 0, j = 0;
+
+      while (i < a.length && j < b.length) {
+        if (a[i] === b[j]) {
+          diff.push({ type: 'ctx', text: a[i], lineA: i + 1, lineB: j + 1 });
+          i++; j++;
+        } else {
+          // Look ahead to check if line is added or deleted
+          let matchJ = -1;
+          for (let scanJ = j; scanJ < Math.min(j + 6, b.length); scanJ++) {
+            if (a[i] === b[scanJ]) { matchJ = scanJ; break; }
+          }
+          let matchI = -1;
+          for (let scanI = i; scanI < Math.min(i + 6, a.length); scanI++) {
+            if (b[j] === a[scanI]) { matchI = scanI; break; }
+          }
+
+          if (matchJ !== -1 && (matchI === -1 || (matchJ - j) <= (matchI - i))) {
+            while (j < matchJ) {
+              diff.push({ type: 'add', text: b[j], lineB: j + 1 });
+              j++;
+            }
+          } else if (matchI !== -1) {
+            while (i < matchI) {
+              diff.push({ type: 'del', text: a[i], lineA: i + 1 });
+              i++;
+            }
+          } else {
+            diff.push({ type: 'del', text: a[i], lineA: i + 1 });
+            diff.push({ type: 'add', text: b[j], lineB: j + 1 });
+            i++; j++;
+          }
+        }
+      }
+      while (i < a.length) {
+        diff.push({ type: 'del', text: a[i], lineA: i + 1 });
+        i++;
+      }
+      while (j < b.length) {
+        diff.push({ type: 'add', text: b[j], lineB: j + 1 });
+        j++;
+      }
+      return diff;
+    }
+
+    // GitLab-Style Unified Side-by-Side Table with Synchronized Scroll and Line Numbers
+    function renderSideBySideTableDiffHTML(beforeText, afterText) {
+      const diffList = computeLCSDiff(beforeText, afterText);
+      const rows = [];
+      let i = 0;
+
+      while (i < diffList.length) {
+        const item = diffList[i];
+        if (item.type === 'ctx') {
+          rows.push({
+            left: { num: item.lineA, sign: ' ', text: item.text, type: 'context' },
+            right: { num: item.lineB, sign: ' ', text: item.text, type: 'context' }
+          });
+          i++;
+        } else if (item.type === 'del') {
+          // Check if followed by add (modification pair)
+          if (i + 1 < diffList.length && diffList[i + 1].type === 'add') {
+            const add = diffList[i + 1];
+            rows.push({
+              left: { num: item.lineA, sign: '-', text: item.text, type: 'removed' },
+              right: { num: add.lineB, sign: '+', text: add.text, type: 'added' }
+            });
+            i += 2;
+          } else {
+            rows.push({
+              left: { num: item.lineA, sign: '-', text: item.text, type: 'removed' },
+              right: { num: '', sign: '', text: '', type: 'empty' }
+            });
+            i++;
+          }
+        } else if (item.type === 'add') {
+          rows.push({
+            left: { num: '', sign: '', text: '', type: 'empty' },
+            right: { num: item.lineB, sign: '+', text: item.text, type: 'added' }
+          });
+          i++;
+        }
+      }
+
+      let html = '<table class="diff-side-table"><tbody>';
+      for (const row of rows) {
+        const leftHtml = row.left.type === 'empty'
+          ? `<div class="side-row-cell empty"><span class="side-num"></span><span class="side-sign"></span><span class="side-code"></span></div>`
+          : `<div class="side-row-cell ${row.left.type}"><span class="side-num">${row.left.num}</span><span class="side-sign">${row.left.sign}</span><span class="side-code">${highlightYAML(row.left.text)}</span></div>`;
+
+        const rightHtml = row.right.type === 'empty'
+          ? `<div class="side-row-cell empty"><span class="side-num"></span><span class="side-sign"></span><span class="side-code"></span></div>`
+          : `<div class="side-row-cell ${row.right.type}"><span class="side-num">${row.right.num}</span><span class="side-sign">${row.right.sign}</span><span class="side-code">${highlightYAML(row.right.text)}</span></div>`;
+
+        html += `<tr><td class="side-half">${leftHtml}</td><td class="side-half">${rightHtml}</td></tr>`;
+      }
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function renderFullInlineDiffHTML(lines) {
+      return lines.map(l => {
+        const num = l.lineB || l.lineA || '';
+        const highlighted = highlightYAML(l.text);
+        if (l.type === 'add') {
+          return `<div class="diff-line added"><span class="diff-num">${num}</span><span class="diff-sign">+</span><span class="diff-content">${highlighted}</span></div>`;
+        } else if (l.type === 'del') {
+          return `<div class="diff-line removed"><span class="diff-num">${l.lineA || ''}</span><span class="diff-sign">-</span><span class="diff-content">${highlighted}</span></div>`;
+        } else {
+          return `<div class="diff-line context"><span class="diff-num">${num}</span><span class="diff-sign"> </span><span class="diff-content">${highlighted}</span></div>`;
+        }
+      }).join('');
+    }
+
+    function renderCompactDiffHTML(lines, contextLabel) {
+      const hasChanges = lines.some(l => l.type === 'add' || l.type === 'del');
+      if (!hasChanges) {
+        return `<div style="padding:24px; text-align:center; color:#38bdf8; font-family:sans-serif;">
+          Identical content. No difference detected for <strong>${contextLabel}</strong>.
+        </div>`;
+      }
+
+      // Compact: Only show changed lines plus 3 lines of surrounding context
+      const keep = new Array(lines.length).fill(false);
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].type === 'add' || lines[i].type === 'del') {
+          for (let k = Math.max(0, i - 3); k <= Math.min(lines.length - 1, i + 3); k++) {
+            keep[k] = true;
+          }
+        }
+      }
+
+      let html = '';
+      let inHunk = false;
+
+      for (let i = 0; i < lines.length; i++) {
+        if (keep[i]) {
+          if (!inHunk) {
+            inHunk = true;
+            html += `<div class="diff-line hunk-header"><span class="diff-num">...</span><span class="diff-sign">@@</span><span class="diff-content">@@ Section context at line ${lines[i].lineA || lines[i].lineB || i+1} @@</span></div>`;
+          }
+          const l = lines[i];
+          const num = l.lineB || l.lineA || '';
+          const highlighted = highlightYAML(l.text);
+          if (l.type === 'add') {
+            html += `<div class="diff-line added"><span class="diff-num">${num}</span><span class="diff-sign">+</span><span class="diff-content">${highlighted}</span></div>`;
+          } else if (l.type === 'del') {
+            html += `<div class="diff-line removed"><span class="diff-num">${l.lineA || ''}</span><span class="diff-sign">-</span><span class="diff-content">${highlighted}</span></div>`;
+          } else {
+            html += `<div class="diff-line context"><span class="diff-num">${num}</span><span class="diff-sign"> </span><span class="diff-content">${highlighted}</span></div>`;
+          }
+        } else {
+          inHunk = false;
+        }
+      }
+      return html;
+    }
+
+    function escapeHTML(str) {
+      return (str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    async function applyConfirmedOverride() {
+      const target = document.getElementById('override-target').value.trim();
+      const duration = document.getElementById('override-duration').value.trim() || '6h';
+      const author = document.getElementById('override-author').value.trim() || 'operator';
+      const reason = document.getElementById('override-reason').value.trim() || 'Temporary operational override';
+      const yaml = document.getElementById('override-yaml').value.trim();
+
+      const btn = document.getElementById('btn-confirm-apply');
+      btn.disabled = true;
+      btn.textContent = 'Applying to Redis...';
+
+      try {
+        const res = await fetch('/api/overrides', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            target: target,
+            duration: duration,
+            author: author,
+            reason: reason,
+            config_yaml: yaml,
+          })
+        });
+
+        if (res.ok) {
+          closeConfirmModal();
+          showToast(`Temporary override applied to Redis for ${target} (TTL: ${duration})`, 'success');
+          loadOverrides();
+          loadStatus();
+          clearTargetLock();
+          if (overrideIDE) {
+            overrideIDE.setValue('');
+          } else {
+            document.getElementById('override-yaml').value = '';
+          }
+        } else {
+          const text = await res.text();
+          showToast('Failed to apply override: ' + text, 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('Network error while applying override', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined icon-sm">check</span><span>Confirm & Apply to Redis</span>';
+      }
+    }
+
+
+    let cachedOverridesList = [];
+    let liveTTLInterval = null;
+
+    async function loadOverrides() {
+      try {
+        const res = await fetch('/api/overrides');
+        const list = await res.json();
+        const now = Date.now();
+        cachedOverridesList = (list || []).map(o => ({
+          ...o,
+          expiresAtMs: now + (Number(o.ttl_seconds) * 1000)
+        }));
+        renderLiveOverridesTable();
+        startLiveTTLTimer();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderLiveOverridesTable() {
+      const tbody = document.getElementById('overrides-table-body');
+      if (!tbody) return;
+
+      const now = Date.now();
+      // Calculate remaining seconds for each override
+      const enriched = cachedOverridesList.map(o => {
+        const rem = Math.max(0, Math.round((o.expiresAtMs - now) / 1000));
+        return { ...o, remainingSeconds: rem };
+      });
+
+      // Sort ascending by remainingSeconds (soonest to expire first)
+      enriched.sort((a, b) => a.remainingSeconds - b.remainingSeconds);
+
+      if (enriched.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--text-muted);">No active temporary overrides.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = enriched.map(o => {
+        const isExpired = o.remainingSeconds <= 0;
+        const badgeClass = isExpired ? 'badge badge-danger' : 'badge badge-apply';
+        const badgeStyle = isExpired ? 'background:rgba(239,68,68,0.2); color:#f87171;' : '';
+        const badgeText = formatRemainingTime(o.remainingSeconds);
+        return `
+          <tr data-target="${escapeHTML(o.target)}">
+            <td style="font-weight:600; font-family:monospace;">${escapeHTML(o.target)}</td>
+            <td>
+              <span class="${badgeClass}" style="${badgeStyle}">
+                <span class="material-symbols-outlined icon-sm">timer</span>
+                <span>${badgeText}</span>
+              </span>
+            </td>
+            <td>
+              <div style="font-weight:500;">${escapeHTML(o.author || 'operator')}</div>
+              <div style="font-size:12px; color:var(--text-muted);">${escapeHTML(o.reason || '')}</div>
+            </td>
+            <td>
+              <button class="btn btn-danger btn-sm" onclick="revokeOverride('${escapeHTML(o.target)}')">
+                <span class="material-symbols-outlined icon-sm">delete</span>
+                <span>Revoke</span>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function startLiveTTLTimer() {
+      if (liveTTLInterval) return;
+      liveTTLInterval = setInterval(() => {
+        if (!cachedOverridesList || cachedOverridesList.length === 0) return;
+        renderLiveOverridesTable();
+      }, 1000);
+    }
+
+    async function revokeOverride(target) {
+      const res = await fetch('/api/overrides?target=' + encodeURIComponent(target), { method: 'DELETE' });
+      if (res.ok) {
+        showToast(`Temporary override for ${target} revoked successfully`, 'info');
+        loadOverrides();
+        loadStatus();
+      } else {
+        showToast('Failed to revoke override', 'error');
+      }
+    }
+
+    function formatRemainingTime(seconds) {
+      if (seconds <= 0) return 'Expired';
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      if (h > 0) return `${h}h ${m}m ${s}s remaining`;
+      if (m > 0) return `${m}m ${s}s remaining`;
+      return `${s}s remaining`;
+    }
+
+    async function saveDirectConfig() {
+      const layer = document.getElementById('dev-layer').value;
+      const name = document.getElementById('dev-filename').value;
+      const yaml = document.getElementById('dev-yaml').value;
+
+      const res = await fetch('/api/config/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ layer, name, config_yaml: yaml })
+      });
+
+      if (res.ok) {
+        showToast('File written successfully to filesystem!', 'success');
+        renderConfig();
+      } else {
+        const text = await res.text();
+        showToast('Error: ' + text, 'error');
+      }
+    }
+
+    // Config Store Explorer Logic
+    let currentStoreFile = null;
+    let currentExplorerView = 'file';
+
+    async function loadStoreTree() {
+      try {
+        const res = await fetch('/api/store/tree');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const rootPathEl = document.getElementById('explorer-root-path');
+        if (rootPathEl) {
+          rootPathEl.textContent = 'Directory: ' + (data.root_dir || '/ (virtual)');
+        }
+
+        const treeRoot = document.getElementById('explorer-tree-root');
+        if (!treeRoot) return;
+
+        if (!data.tree || data.tree.length === 0) {
+          treeRoot.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-muted); font-size:12px;">No configuration files found.</div>';
+          return;
+        }
+
+        treeRoot.innerHTML = renderTreeNodesHTML(data.tree, 0);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderTreeNodesHTML(nodes, depth) {
+      if (!nodes || nodes.length === 0) return '';
+      return nodes.map(node => {
+        const isDir = node.type === 'directory';
+        const overrideTag = node.has_override ? '<span class="tree-override-badge">Redis</span>' : '';
+
+        if (isDir) {
+          const childCount = node.children ? node.children.length : 0;
+          return `
+            <div class="tree-node">
+              <div class="tree-row" onclick="toggleTreeDir(this)">
+                <span class="tree-arrow ${childCount > 0 ? 'expanded' : ''}">
+                  <span class="material-symbols-outlined icon-sm">chevron_right</span>
+                </span>
+                <span class="tree-icon folder">
+                  <span class="material-symbols-outlined icon-sm">folder</span>
+                </span>
+                <span class="tree-label">${escapeHTML(node.name)}/</span>
+                ${overrideTag}
+              </div>
+              <div class="tree-children">
+                ${renderTreeNodesHTML(node.children, depth + 1)}
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="tree-node">
+              <div class="tree-row file-row" data-path="${escapeHTML(node.path)}" onclick="selectStoreFile('${escapeHTML(node.path)}', this)">
+                <span class="tree-arrow" style="visibility:hidden;">
+                  <span class="material-symbols-outlined icon-sm">chevron_right</span>
+                </span>
+                <span class="tree-icon file">
+                  <span class="material-symbols-outlined icon-sm">description</span>
+                </span>
+                <span class="tree-label">${escapeHTML(node.name)}</span>
+                ${overrideTag}
+              </div>
+            </div>
+          `;
+        }
+      }).join('');
+    }
+
+    function toggleTreeDir(rowEl) {
+      const arrow = rowEl.querySelector('.tree-arrow');
+      const children = rowEl.nextElementSibling;
+      if (!children) return;
+      if (children.classList.contains('collapsed')) {
+        children.classList.remove('collapsed');
+        if (arrow) arrow.classList.add('expanded');
+      } else {
+        children.classList.add('collapsed');
+        if (arrow) arrow.classList.remove('expanded');
+      }
+    }
+
+    async function selectStoreFile(filePath, rowEl) {
+      // Highlight selected row in tree
+      document.querySelectorAll('.tree-row').forEach(r => r.classList.remove('selected'));
+      if (rowEl) rowEl.classList.add('selected');
+
+      try {
+        const res = await fetch('/api/store/file?path=' + encodeURIComponent(filePath));
+        if (!res.ok) {
+          showToast('Failed to load file: ' + (await res.text()), 'error');
+          return;
+        }
+
+        const data = await res.json();
+        currentStoreFile = data;
+
+        // UI state transitions
+        document.getElementById('explorer-empty-placeholder').style.display = 'none';
+        document.getElementById('explorer-view-tabs').style.display = 'inline-flex';
+        document.getElementById('explorer-current-path').textContent = data.path;
+
+        const overrideBadge = document.getElementById('explorer-override-badge');
+        const tabPillOverride = document.getElementById('tab-pill-override');
+        const tabPillMerged = document.getElementById('tab-pill-merged');
+
+        if (data.has_override) {
+          overrideBadge.style.display = 'inline-block';
+          tabPillOverride.style.display = 'inline-block';
+          tabPillMerged.style.display = 'inline-block';
+        } else {
+          overrideBadge.style.display = 'none';
+          tabPillOverride.style.display = 'none';
+          tabPillMerged.style.display = 'none';
+        }
+
+        // Meta banner
+        const metaBanner = document.getElementById('explorer-meta-banner');
+        metaBanner.style.display = 'flex';
+        document.getElementById('explorer-meta-layer').textContent = data.layer || 'generic';
+        document.getElementById('explorer-meta-scope').textContent = data.target_scope || 'none';
+        document.getElementById('explorer-meta-status').textContent = data.has_override
+          ? `Override Active in Redis (Author: ${data.override_meta ? data.override_meta.author : 'operator'})`
+          : 'GitOps Baseline (No active override)';
+
+        // Editor & viewer contents
+        if (explorerIDE) {
+          explorerIDE.setValue(data.content_yaml || '');
+        } else {
+          const editor = document.getElementById('explorer-file-editor');
+          if (editor) editor.value = data.content_yaml || '';
+        }
+        const editor = document.getElementById('explorer-file-editor');
+        if (editor) editor.readOnly = !data.can_edit;
+
+        const saveBtn = document.getElementById('btn-save-file-editor');
+        const hint = document.getElementById('explorer-editor-hint');
+        const modeBadge = document.getElementById('explorer-mode-badge-local');
+
+        if (data.can_edit) {
+          saveBtn.style.display = 'inline-flex';
+          hint.textContent = 'Development Mode: You can edit and save directly to disk.';
+          modeBadge.className = 'badge badge-dev';
+          modeBadge.textContent = 'Dev: Read/Write';
+        } else {
+          saveBtn.style.display = 'none';
+          hint.textContent = 'Production Mode: File is read-only. Create temporary Redis override or Git PR to modify.';
+          modeBadge.className = 'badge badge-prod';
+          modeBadge.textContent = 'Prod: Read-Only';
+        }
+
+        document.getElementById('explorer-override-content').innerHTML = highlightYAML(data.override_yaml || '# No override');
+        document.getElementById('explorer-merged-content').innerHTML = highlightYAML(data.merged_yaml || '# No merged output');
+
+        switchExplorerView('file');
+      } catch (e) {
+        console.error(e);
+        showToast('Network error while reading file', 'error');
+      }
+    }
+
+    function switchExplorerView(view) {
+      currentExplorerView = view;
+      document.querySelectorAll('.tab-pill').forEach(p => p.classList.remove('active'));
+      const activePill = document.getElementById('tab-pill-' + view);
+      if (activePill) activePill.classList.add('active');
+
+      document.getElementById('explorer-file-view').style.display = (view === 'file') ? 'block' : 'none';
+      document.getElementById('explorer-override-view').style.display = (view === 'override') ? 'block' : 'none';
+      document.getElementById('explorer-merged-view').style.display = (view === 'merged') ? 'block' : 'none';
+    }
+
+    async function saveEditorFile() {
+      if (!currentStoreFile) return;
+      if (!currentStoreFile.can_edit) {
+        showToast('File writes are disabled in production mode.', 'error');
+        return;
+      }
+
+      const content = document.getElementById('explorer-file-editor').value;
+      const saveBtn = document.getElementById('btn-save-file-editor');
+      saveBtn.disabled = true;
+
+      try {
+        // Derive layer and name
+        const layer = currentStoreFile.layer || 'base';
+        const filename = currentStoreFile.path.split('/').pop().replace(/\.ya?ml$/, '');
+
+        const res = await fetch('/api/config/save', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            layer: layer,
+            name: (layer === 'base' ? '' : filename),
+            config_yaml: content,
+          })
+        });
+
+        if (res.ok) {
+          showToast(`Saved ${currentStoreFile.path} successfully to filesystem!`, 'success');
+          // Reload file details to refresh merged state
+          await selectStoreFile(currentStoreFile.path, null);
+        } else {
+          const errText = await res.text();
+          showToast('Failed to save file: ' + errText, 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('Error saving file to disk', 'error');
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+
+    async function loadAudit() {
+      try {
+        const res = await fetch('/api/audit');
+        const events = await res.json();
+        const tbody = document.getElementById('audit-table-body');
+        if (!events || events.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No audit events recorded yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = events.map(e => `
+          <tr>
+            <td style="font-size:12px; color:var(--text-muted);">${new Date(e.timestamp).toLocaleString()}</td>
+            <td><span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8;">${e.event_type}</span></td>
+            <td>${e.actor ? e.actor.identity : '-'}</td>
+            <td style="font-family:monospace; font-size:12px;">${e.target ? (e.target.hostname || e.target.path || '-') : '-'}</td>
+            <td style="font-size:12px;">${e.details ? (e.details.reason || '') : ''}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    init();
+    setInterval(loadStatus, 5000);
+  </script>
+</body>
+</html>

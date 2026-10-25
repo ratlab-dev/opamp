@@ -1,0 +1,33 @@
+services:
+  openobserve:
+    image: public.ecr.aws/zinclabs/openobserve:latest
+    container_name: openobserve
+    ports:
+      - "5080:5080"
+    environment:
+      - ZO_ROOT_USER_EMAIL=${ZO_ROOT_USER_EMAIL:-admin@example.com}
+      - ZO_ROOT_USER_PASSWORD=${ZO_ROOT_USER_PASSWORD:-adminpassword}
+      - ZO_DATA_DIR=/data
+    volumes:
+      - openobserve_data:/data
+    restart: unless-stopped
+
+  opamp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: opamp-server
+    ports:
+      - "4320:4320"
+    environment:
+      - OPAMP_PORT=4320
+      - OPAMP_MODE=development
+      - OPAMP_CONFIG_DIR=/app/configs
+    volumes:
+      - ./examples/configs:/app/configs
+    depends_on:
+      - openobserve
+    restart: unless-stopped
+
+volumes:
+  openobserve_data:

@@ -1,0 +1,11 @@
+processors:
+  resourcedetection/aws:
+    detectors: [env, ec2]
+    timeout: 2s
+
+service:
+  pipelines:
+    traces:
+      processors: [resourcedetection/aws]
+    metrics:
+      processors: [resourcedetection/aws]

@@ -1,0 +1,61 @@
+# hierarchy.yaml - GitOps Precedence & Topology Hierarchy Definition
+#
+# Evaluation Order: Top to Bottom (Higher levels override lower levels).
+# You can customize this file in GitOps to add any custom topology dimensions
+# such as regions, datacenters, clouds, teams, or nested directories.
+
+layers:
+  - level: 1
+    name: "Base"
+    type: "file"
+    path: "base.yaml"
+    description: "Fleet-wide baseline defaults (Level 1 - Lowest Precedence)"
+
+  - level: 2
+    name: "Environment"
+    type: "file"
+    path: "environments/{{.Environment}}.yaml"
+    dimensions: ["Environment"]
+    description: "Environment settings (prod, staging, dev)"
+
+  - level: 3
+    name: "Cluster"
+    type: "file"
+    path: "clusters/{{.Cluster}}.yaml"
+    dimensions: ["Cluster"]
+    description: "Kubernetes / cloud cluster settings (e.g. us-east-1)"
+
+  - level: 4
+    name: "Subdomain"
+    type: "file"
+    path: "subdomains/{{.Subdomain}}.yaml"
+    dimensions: ["Subdomain"]
+    description: "Subdomain / network zone settings (e.g. payments)"
+
+  - level: 5
+    name: "Role"
+    type: "file"
+    path: "roles/{{.Role}}.yaml"
+    dimensions: ["Role"]
+    description: "Workload role settings (database, node-exporter, clickhouse)"
+
+  - level: 6
+    name: "Environment-Role"
+    type: "file"
+    path: "environments/{{.Environment}}/roles/{{.Role}}.yaml"
+    dimensions: ["Environment", "Role"]
+    description: "Environment-specific workload role override"
+
+  - level: 7
+    name: "Hostname"
+    type: "file"
+    path: "hosts/{{.Hostname}}.yaml"
+    dimensions: ["Hostname"]
+    description: "Host-specific overrides (e.g. prod-db-01)"
+
+  - level: 8
+    name: "Redis-TTL"
+    type: "redis"
+    path: "redis:override:{{.Hostname}}"
+    dimensions: ["Hostname"]
+    description: "Temporary operational override with TTL (Level 8 - HIGHEST PRECEDENCE)"

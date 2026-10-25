@@ -1,0 +1,12 @@
+receivers:
+  postgresql:
+    endpoint: localhost:5432
+    transport: tcp
+    username: otel_monitor
+    databases: [app_production]
+    collection_interval: 15s
+
+service:
+  pipelines:
+    metrics:
+      receivers: [postgresql]

@@ -1,0 +1,16 @@
+receivers:
+  hostmetrics:
+    collection_interval: 10s
+    scrapers:
+      cpu:
+      disk:
+      filesystem:
+      load:
+      memory:
+      network:
+      process:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [hostmetrics]
